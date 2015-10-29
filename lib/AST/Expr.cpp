@@ -1346,6 +1346,21 @@ IdentifierInfo *OffsetOfExpr::OffsetOfNode::getFieldName() const {
   return reinterpret_cast<IdentifierInfo *> (Data & ~(uintptr_t)Mask);
 }
 
+// Mirror
+ReflexprOperandExpr::ReflexprOperandExpr(
+    Expr *E, QualType resultType,
+    SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprOperandExprClass, resultType, VK_RValue, OK_Ordinary,
+           false, // Never type-dependent (C++ [temp.dep.expr]p3).
+           // Value-dependent if the argument is type-dependent.
+           E->isTypeDependent(), E->isInstantiationDependent(),
+           E->containsUnexpandedParameterPack()),
+      OpLoc(op), RParenLoc(rp) {
+  ReflexprOperandExprBits.IsType = false;
+  Argument.Ex = E;
+}
+// Mirror
+
 UnaryExprOrTypeTraitExpr::UnaryExprOrTypeTraitExpr(
     UnaryExprOrTypeTrait ExprKind, Expr *E, QualType resultType,
     SourceLocation op, SourceLocation rp)
@@ -2961,6 +2976,7 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
   case CharacterLiteralClass:
   case OffsetOfExprClass:
   case ImplicitValueInitExprClass:
+  case ReflexprOperandExprClass: // Mirror
   case UnaryExprOrTypeTraitExprClass:
   case AddrLabelExprClass:
   case GNUNullExprClass:
@@ -3904,6 +3920,20 @@ PseudoObjectExpr::PseudoObjectExpr(QualType type, ExprValueKind VK,
 //===----------------------------------------------------------------------===//
 //  Child Iterators for iterating over subexpressions/substatements
 //===----------------------------------------------------------------------===//
+
+// ReflexprOperandExpr
+Stmt::child_range ReflexprOperandExpr::children() {
+  // If this is of a type and the type is a VLA type (and not a typedef), the
+  // size expression of the VLA needs to be treated as an executable expression.
+  // Why isn't this weirdness documented better in StmtIterator?
+  if (isType()) {
+    if (const VariableArrayType* T = dyn_cast<VariableArrayType>(
+                                   getType().getTypePtr()))
+      return child_range(child_iterator(T), child_iterator());
+    return child_range(child_iterator(), child_iterator());
+  }
+  return child_range(&Argument.Ex, &Argument.Ex + 1);
+}
 
 // UnaryExprOrTypeTraitExpr
 Stmt::child_range UnaryExprOrTypeTraitExpr::children() {

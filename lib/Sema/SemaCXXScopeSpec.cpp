@@ -808,6 +808,31 @@ bool Sema::ActOnCXXNestedNameSpecifier(Scope *S,
                                      IsCorrectedToColon);
 }
 
+// Mirror
+bool Sema::ActOnCXXNestedNameSpecifierReflexpr(CXXScopeSpec &SS,
+                                               const DeclSpec &DS,
+                                               SourceLocation ColonColonLoc) {
+  if (SS.isInvalid() || DS.getTypeSpecType() == DeclSpec::TST_error)
+    return true;
+
+  assert(DS.getTypeSpecType() == DeclSpec::TST_reflexpr);
+
+  QualType T = BuildReflexprType(DS.getRepAsExpr(), DS.getTypeSpecTypeLoc());
+  if (!T->isDependentType() && !T->getAs<TagType>()) {
+    Diag(DS.getTypeSpecTypeLoc(), diag::err_expected_class_or_namespace) 
+      << T << getLangOpts().CPlusPlus;
+    return true;
+  }
+
+  TypeLocBuilder TLB;
+  ReflexprTypeLoc ReflexprTL = TLB.push<ReflexprTypeLoc>(T);
+  ReflexprTL.setNameLoc(DS.getTypeSpecTypeLoc());
+  SS.Extend(Context, SourceLocation(), TLB.getTypeLocInContext(Context, T),
+            ColonColonLoc);
+  return false;
+}
+// Mirror
+
 bool Sema::ActOnCXXNestedNameSpecifierDecltype(CXXScopeSpec &SS,
                                                const DeclSpec &DS,
                                                SourceLocation ColonColonLoc) {

@@ -9037,6 +9037,9 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
     // GCC considers the GNU __null value to be an integral constant expression.
     return NoDiag();
 
+  case Expr::ReflexprOperandExprClass: // Mirror
+    return NoDiag();
+
   case Expr::SubstNonTypeTemplateParmExprClass:
     return
       CheckICE(cast<SubstNonTypeTemplateParmExpr>(E)->getReplacement(), Ctx);

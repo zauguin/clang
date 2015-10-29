@@ -1762,6 +1762,11 @@ const internal::VariadicOperatorMatcherFunc<2, UINT_MAX> allOf = {
   internal::DynTypedMatcher::VO_AllOf
 };
 
+// Mirror
+const internal::VariadicDynCastAllOfMatcher<
+  Stmt,
+  ReflexprOperandExpr> reflexprOperandExpr;
+
 /// \brief Matches sizeof (C99), alignof (C++11) and vec_step (OpenCL)
 ///
 /// Given

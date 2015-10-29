@@ -803,6 +803,9 @@ public:
     /// \brief Whether we are in a decltype expression.
     bool IsDecltype;
 
+    // Mirror
+    bool IsReflexpr;
+
     /// \brief The number of active cleanup objects when we entered
     /// this expression evaluation context.
     unsigned NumCleanupObjects;
@@ -841,9 +844,11 @@ public:
                                       unsigned NumCleanupObjects,
                                       bool ParentNeedsCleanups,
                                       Decl *ManglingContextDecl,
-                                      bool IsDecltype)
+                                      bool IsDecltype,
+                                      bool IsReflexpr) // Mirror
       : Context(Context), ParentNeedsCleanups(ParentNeedsCleanups),
-        IsDecltype(IsDecltype), NumCleanupObjects(NumCleanupObjects),
+        IsDecltype(IsDecltype), IsReflexpr(IsReflexpr), // Mirror
+        NumCleanupObjects(NumCleanupObjects),
         NumTypos(0),
         ManglingContextDecl(ManglingContextDecl), MangleNumbering() { }
 
@@ -1422,10 +1427,14 @@ public:
                              const CXXScopeSpec &SS, QualType T);
 
   QualType BuildTypeofExprType(Expr *E, SourceLocation Loc);
+
+  QualType BuildReflexprType(Expr *E, SourceLocation Loc);
+
   /// If AsUnevaluated is false, E is treated as though it were an evaluated
   /// context, such as when building a type for decltype(auto).
   QualType BuildDecltypeType(Expr *E, SourceLocation Loc,
                              bool AsUnevaluated = true);
+
   QualType BuildUnaryTransformType(QualType BaseType,
                                    UnaryTransformType::UTTKind UKind,
                                    SourceLocation Loc);
@@ -3517,11 +3526,13 @@ public:
 
   void PushExpressionEvaluationContext(ExpressionEvaluationContext NewContext,
                                        Decl *LambdaContextDecl = nullptr,
-                                       bool IsDecltype = false);
+                                       bool IsDecltype = false,
+                                       bool IsReflexpr = false); // Mirror
   enum ReuseLambdaContextDecl_t { ReuseLambdaContextDecl };
   void PushExpressionEvaluationContext(ExpressionEvaluationContext NewContext,
                                        ReuseLambdaContextDecl_t,
-                                       bool IsDecltype = false);
+                                       bool IsDecltype = false,
+                                       bool IsReflexpr = false); // Mirror
   void PopExpressionEvaluationContext();
 
   void DiscardCleanupsInEvaluationContext();
@@ -4833,7 +4844,28 @@ public:
                                    bool ErrorRecoveryLookup = false,
                                    bool *IsCorrectedToColon = nullptr);
 
+  // Mirror
+  ExprResult CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
+                                       SourceLocation OpLoc,
+                                       SourceRange R);
+
+  ExprResult CreateReflexprOperandExpr(Expr* E,
+                                       SourceLocation OpLoc,
+                                       SourceRange R);
+  // Mirror
+  ExprResult ActOnReflexprExpression(SourceLocation OpLoc,
+                                     SourceRange ArgRange,
+                                     ParsedType& ExprTy);
+
+  ExprResult ActOnReflexprExpression(Expr *E);
+  // Mirror
+
   ExprResult ActOnDecltypeExpression(Expr *E);
+
+  // Mirror
+  bool ActOnCXXNestedNameSpecifierReflexpr(CXXScopeSpec &SS,
+                                           const DeclSpec &DS,
+                                           SourceLocation ColonColonLoc);
 
   bool ActOnCXXNestedNameSpecifierDecltype(CXXScopeSpec &SS,
                                            const DeclSpec &DS,
@@ -9119,19 +9151,23 @@ public:
   EnterExpressionEvaluationContext(Sema &Actions,
                                    Sema::ExpressionEvaluationContext NewContext,
                                    Decl *LambdaContextDecl = nullptr,
-                                   bool IsDecltype = false)
+                                   bool IsDecltype = false,
+                                   bool IsReflexpr = false) // Mirror
     : Actions(Actions) {
     Actions.PushExpressionEvaluationContext(NewContext, LambdaContextDecl,
-                                            IsDecltype);
+                                            IsDecltype,
+                                            IsReflexpr); // Mirror
   }
   EnterExpressionEvaluationContext(Sema &Actions,
                                    Sema::ExpressionEvaluationContext NewContext,
                                    Sema::ReuseLambdaContextDecl_t,
-                                   bool IsDecltype = false)
+                                   bool IsDecltype = false,
+                                   bool IsReflexpr = false) // Mirror
     : Actions(Actions) {
     Actions.PushExpressionEvaluationContext(NewContext, 
                                             Sema::ReuseLambdaContextDecl,
-                                            IsDecltype);
+                                            IsDecltype,
+                                            IsReflexpr); // Mirror
   }
 
   ~EnterExpressionEvaluationContext() {

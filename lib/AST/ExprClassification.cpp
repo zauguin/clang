@@ -148,6 +148,7 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
     // Expressions that are prvalues.
   case Expr::CXXBoolLiteralExprClass:
   case Expr::CXXPseudoDestructorExprClass:
+  case Expr::ReflexprOperandExprClass: // Mirror
   case Expr::UnaryExprOrTypeTraitExprClass:
   case Expr::CXXNewExprClass:
   case Expr::CXXThisExprClass:

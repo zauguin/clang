@@ -510,6 +510,13 @@ struct CanProxyAdaptor<TypeOfType> : public CanProxyBase<TypeOfType> {
   LLVM_CLANG_CANPROXY_TYPE_ACCESSOR(getUnderlyingType)
 };
 
+// Mirror
+template<>
+struct CanProxyAdaptor<ReflexprType> : public CanProxyBase<ReflexprType> {
+  LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(Expr *, getUnderlyingExpr)
+  LLVM_CLANG_CANPROXY_TYPE_ACCESSOR(getUnderlyingType)
+};
+
 template<>
 struct CanProxyAdaptor<DecltypeType> : public CanProxyBase<DecltypeType> {
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(Expr *, getUnderlyingExpr)

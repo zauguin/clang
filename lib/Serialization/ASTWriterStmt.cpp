@@ -509,6 +509,21 @@ void ASTStmtWriter::VisitOffsetOfExpr(OffsetOfExpr *E) {
   Code = serialization::EXPR_OFFSETOF;
 }
 
+// Mirror
+void ASTStmtWriter::VisitReflexprOperandExpr(ReflexprOperandExpr *E) {
+  VisitExpr(E);
+  if (E->isType())
+    Writer.AddTypeSourceInfo(E->getTypeInfo(), Record);
+  else {
+    Record.push_back(0);
+    Writer.AddStmt(E->getExpr());
+  }
+  Writer.AddSourceLocation(E->getOperatorLoc(), Record);
+  Writer.AddSourceLocation(E->getRParenLoc(), Record);
+  Code = serialization::EXPR_REFLEXPR_OP;
+}
+// Mirror
+
 void ASTStmtWriter::VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *E) {
   VisitExpr(E);
   Record.push_back(E->getKind());

@@ -150,6 +150,14 @@ protected:
     unsigned IsExact : 1;
   };
 
+  // Mirror
+  class ReflexprOperandExprBitfields {
+    friend class ReflexprOperandExpr;
+    unsigned : NumExprBits;
+
+    unsigned IsType : 1; // true if operand is a type, false if an expression.
+  };
+
   class UnaryExprOrTypeTraitExprBitfields {
     friend class UnaryExprOrTypeTraitExpr;
     unsigned : NumExprBits;
@@ -247,6 +255,7 @@ protected:
     ExprBitfields ExprBits;
     CharacterLiteralBitfields CharacterLiteralBits;
     FloatingLiteralBitfields FloatingLiteralBits;
+    ReflexprOperandExprBitfields ReflexprOperandExprBits;
     UnaryExprOrTypeTraitExprBitfields UnaryExprOrTypeTraitExprBits;
     DeclRefExprBitfields DeclRefExprBits;
     CastExprBitfields CastExprBits;

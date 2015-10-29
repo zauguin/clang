@@ -265,6 +265,12 @@ void ASTTypeWriter::VisitTypeOfType(const TypeOfType *T) {
   Code = TYPE_TYPEOF;
 }
 
+void ASTTypeWriter::VisitReflexprType(const ReflexprType *T) {
+  Writer.AddTypeRef(T->getUnderlyingType(), Record);
+  Writer.AddStmt(T->getUnderlyingExpr());
+  Code = TYPE_REFLEXPR;
+}
+
 void ASTTypeWriter::VisitDecltypeType(const DecltypeType *T) {
   Writer.AddTypeRef(T->getUnderlyingType(), Record);
   Writer.AddStmt(T->getUnderlyingExpr());
@@ -565,6 +571,10 @@ void TypeLocWriter::VisitTypeOfTypeLoc(TypeOfTypeLoc TL) {
   Writer.AddSourceLocation(TL.getRParenLoc(), Record);
   Writer.AddTypeSourceInfo(TL.getUnderlyingTInfo(), Record);
 }
+// Mirror
+void TypeLocWriter::VisitReflexprTypeLoc(ReflexprTypeLoc TL) {
+  Writer.AddSourceLocation(TL.getNameLoc(), Record);
+}
 void TypeLocWriter::VisitDecltypeTypeLoc(DecltypeTypeLoc TL) {
   Writer.AddSourceLocation(TL.getNameLoc(), Record);
 }
@@ -772,6 +782,7 @@ static void AddStmtsExprs(llvm::BitstreamWriter &Stream,
   RECORD(EXPR_PAREN);
   RECORD(EXPR_PAREN_LIST);
   RECORD(EXPR_UNARY_OPERATOR);
+  RECORD(EXPR_REFLEXPR_OP);
   RECORD(EXPR_SIZEOF_ALIGN_OF);
   RECORD(EXPR_ARRAY_SUBSCRIPT);
   RECORD(EXPR_CALL);

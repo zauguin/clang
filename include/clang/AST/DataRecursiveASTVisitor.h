@@ -889,6 +889,10 @@ DEF_TRAVERSE_TYPE(TypeOfExprType,
 
 DEF_TRAVERSE_TYPE(TypeOfType, { TRY_TO(TraverseType(T->getUnderlyingType())); })
 
+// Mirror
+DEF_TRAVERSE_TYPE(ReflexprType,
+                  { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
+
 DEF_TRAVERSE_TYPE(DecltypeType,
                   { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
 
@@ -1103,6 +1107,11 @@ DEF_TRAVERSE_TYPELOC(TypeOfExprType,
 
 DEF_TRAVERSE_TYPELOC(TypeOfType, {
   TRY_TO(TraverseTypeLoc(TL.getUnderlyingTInfo()->getTypeLoc()));
+})
+
+// Mirror
+DEF_TRAVERSE_TYPELOC(ReflexprType, {
+  TRY_TO(TraverseStmt(TL.getTypePtr()->getUnderlyingExpr()));
 })
 
 // FIXME: location of underlying expr
@@ -2100,6 +2109,11 @@ DEF_TRAVERSE_STMT(OffsetOfExpr, {
   // FIMXE: for code like offsetof(Foo, a.b.c), should we get
   // making a MemberExpr callbacks for Foo.a, Foo.a.b, and Foo.a.b.c?
   TRY_TO(TraverseTypeLoc(S->getTypeSourceInfo()->getTypeLoc()));
+})
+
+DEF_TRAVERSE_STMT(ReflexprOperandExpr, {
+  if (S->isType())
+    TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
 })
 
 DEF_TRAVERSE_STMT(UnaryExprOrTypeTraitExpr, {

@@ -1265,6 +1265,12 @@ void ExprEngine::Visit(const Stmt *S, ExplodedNode *Pred,
       Bldr.addNodes(Dst);
       break;
 
+    case Stmt::ReflexprOperandExprClass:
+      Bldr.takeNodes(Pred);
+      VisitReflexprOperandExpr(cast<ReflexprOperandExpr>(S), Pred, Dst);
+      Bldr.addNodes(Dst);
+      break;
+
     case Stmt::UnaryExprOrTypeTraitExprClass:
       Bldr.takeNodes(Pred);
       VisitUnaryExprOrTypeTraitExpr(cast<UnaryExprOrTypeTraitExpr>(S),

@@ -1248,6 +1248,19 @@ void StmtPrinter::VisitOffsetOfExpr(OffsetOfExpr *Node) {
   OS << ")";
 }
 
+// Mirror TODO
+void StmtPrinter::VisitReflexprOperandExpr(ReflexprOperandExpr *Node){
+  if (Node->isType()) {
+    OS << '(';
+    Node->getType().print(OS, Policy);
+    OS << ')';
+  } else {
+    OS << " ";
+    PrintExpr(Node->getExpr());
+  }
+}
+// Mirror
+
 void StmtPrinter::VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *Node){
   switch(Node->getKind()) {
   case UETT_SizeOf:

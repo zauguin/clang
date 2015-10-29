@@ -3742,6 +3742,54 @@ bool Sema::CheckVecStepExpr(Expr *E) {
   return CheckUnaryExprOrTypeTraitOperand(E, UETT_VecStep);
 }
 
+// Mirror
+ExprResult
+Sema::CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
+                                SourceLocation OpLoc,
+                                SourceRange R) {
+  if (!TInfo)
+    return ExprError();
+
+  QualType T = TInfo->getType();
+
+/* Mirror TODO do we need complete type here ?
+  if (!T->isDependentType() &&
+      RequireCompleteType(OpLoc, T, R))
+    return ExprError();
+*/
+
+  // Mirror TODO:
+  return new (Context) ReflexprOperandExpr(TInfo, T, OpLoc, R.getEnd());
+}
+
+ExprResult
+Sema::CreateReflexprOperandExpr(Expr* E,
+                                SourceLocation OpLoc,
+                                SourceRange R) {
+  ExprResult PE = CheckPlaceholderExpr(E);
+  if (PE.isInvalid()) 
+    return ExprError();
+
+  E = PE.get();
+  
+  // Verify that the operand is valid.
+  bool isInvalid = false;
+  if (E->isTypeDependent()) {
+    // Delay type-checking for type-dependent expressions.
+  } else {
+    // Mirror TODO
+    //isInvalid = CheckUnaryExprOrTypeTraitOperand(E, UETT_SizeOf);
+  }
+
+  if (isInvalid)
+    return ExprError();
+
+  // Mirror TODO:
+  return new (Context) ReflexprOperandExpr(
+      E, Context.getSizeType(), OpLoc, E->getSourceRange().getEnd());
+}
+// Mirror
+
 /// \brief Build a sizeof or alignof expression given a type operand.
 ExprResult
 Sema::CreateUnaryExprOrTypeTraitExpr(TypeSourceInfo *TInfo,
@@ -12231,10 +12279,11 @@ ExprResult Sema::TransformToPotentiallyEvaluated(Expr *E) {
 void
 Sema::PushExpressionEvaluationContext(ExpressionEvaluationContext NewContext,
                                       Decl *LambdaContextDecl,
-                                      bool IsDecltype) {
+                                      bool IsDecltype,
+                                      bool IsReflexpr) { // Mirror
   ExprEvalContexts.emplace_back(NewContext, ExprCleanupObjects.size(),
                                 ExprNeedsCleanups, LambdaContextDecl,
-                                IsDecltype);
+                                IsDecltype, IsReflexpr); // Mirror
   ExprNeedsCleanups = false;
   if (!MaybeODRUseExprs.empty())
     std::swap(MaybeODRUseExprs, ExprEvalContexts.back().SavedMaybeODRUseExprs);
@@ -12243,9 +12292,12 @@ Sema::PushExpressionEvaluationContext(ExpressionEvaluationContext NewContext,
 void
 Sema::PushExpressionEvaluationContext(ExpressionEvaluationContext NewContext,
                                       ReuseLambdaContextDecl_t,
-                                      bool IsDecltype) {
+                                      bool IsDecltype,
+                                      bool IsReflexpr) { // Mirror
   Decl *ClosureContextDecl = ExprEvalContexts.back().ManglingContextDecl;
-  PushExpressionEvaluationContext(NewContext, ClosureContextDecl, IsDecltype);
+  PushExpressionEvaluationContext(NewContext, ClosureContextDecl,
+                                  IsDecltype,
+                                  IsReflexpr);
 }
 
 void Sema::PopExpressionEvaluationContext() {
@@ -13141,6 +13193,9 @@ bool Sema::tryCaptureVariable(
         case Type::Typedef:
           QTy = cast<TypedefType>(Ty)->desugar();
           break;
+        case Type::Reflexpr: // Mirror TODO
+          QTy = cast<ReflexprType>(Ty)->desugar();
+          break;
         case Type::Decltype:
           QTy = cast<DecltypeType>(Ty)->desugar();
           break;
@@ -13740,7 +13795,8 @@ bool Sema::CheckCallReturnType(QualType ReturnType, SourceLocation Loc,
 
   // If we're inside a decltype's expression, don't check for a valid return
   // type or construct temporaries until we know whether this is the last call.
-  if (ExprEvalContexts.back().IsDecltype) {
+  if (ExprEvalContexts.back().IsDecltype ||
+      ExprEvalContexts.back().IsReflexpr) { // Mirror
     ExprEvalContexts.back().DelayedDecltypeCalls.push_back(CE);
     return false;
   }

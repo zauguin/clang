@@ -752,12 +752,18 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
     ConsumeToken();
     break;
 
+  case tok::annot_reflexpr: {// Mirror
+    DeclSpec DS(AttrFactory);
+    return ParseReflexprSpecifier(DS, nullptr);
+  }
+
   case tok::kw___super:
+  case tok::kw_reflexpr:
   case tok::kw_decltype:
     // Annotate the token and tail recurse.
     if (TryAnnotateTypeOrScopeToken())
       return ExprError();
-    assert(Tok.isNot(tok::kw_decltype) && Tok.isNot(tok::kw___super));
+    assert(Tok.isNot(tok::kw_decltype) && Tok.isNot(tok::kw_reflexpr) && Tok.isNot(tok::kw___super));
     return ParseCastExpression(isUnaryExpression, isAddressOfOperand);
       
   case tok::identifier: {      // primary-expression: identifier
@@ -1175,15 +1181,19 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
     DeclSpec DS(AttrFactory);
 
     ParseCXXSimpleTypeSpecifier(DS);
-    if (Tok.isNot(tok::l_paren) &&
-        (!getLangOpts().CPlusPlus11 || Tok.isNot(tok::l_brace)))
-      return ExprError(Diag(Tok, diag::err_expected_lparen_after_type)
-                         << DS.getSourceRange());
 
-    if (Tok.is(tok::l_brace))
-      Diag(Tok, diag::warn_cxx98_compat_generalized_initializer_lists);
+    if(Tok.is(tok::l_paren) ||
+      (getLangOpts().CPlusPlus11 && Tok.is(tok::l_brace))) {
 
-    Res = ParseCXXTypeConstructExpression(DS);
+      if (Tok.is(tok::l_brace))
+        Diag(Tok, diag::warn_cxx98_compat_generalized_initializer_lists);
+
+      Res = ParseCXXTypeConstructExpression(DS);
+
+    } else {
+        return ExprError(Diag(Tok, diag::err_expected_lparen_after_type)
+                           << DS.getSourceRange());
+    }
     break;
   }
 
@@ -1658,6 +1668,54 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     }
   }
 }
+
+// Mirror
+ExprResult
+Parser::ParseExprAfterReflexpr(const Token &OpTok,
+                               bool &isCastExpr,
+                               ParsedType &CastTy,
+                               SourceRange &CastRange) {
+
+  assert(OpTok.isOneOf(tok::kw_reflexpr, tok::annot_reflexpr) &&
+         "Not a reflexpr expression!");
+
+  ExprResult Operand;
+
+  // If the operand doesn't start with an '(', it must be an expression.
+  if (Tok.isNot(tok::l_paren)) {
+
+    isCastExpr = false;
+
+    Operand = ParseCastExpression(true/*isUnaryExpression*/);
+  } else {
+    // If it starts with a '(', we know that it is either a parenthesized
+    // type-name, or it is a unary-expression that starts with a compound
+    // literal, or starts with a primary-expression that is a parenthesized
+    // expression.
+    ParenParseOption ExprType = CastExpr;
+    SourceLocation LParenLoc = Tok.getLocation(), RParenLoc;
+
+    Operand = ParseParenExpression(ExprType, true/*stopIfCastExpr*/, 
+                                   false, CastTy, RParenLoc);
+    CastRange = SourceRange(LParenLoc, RParenLoc);
+
+    // If ParseParenExpression parsed a '(typename)' sequence only, then this is
+    // a type.
+    if (ExprType == CastExpr) {
+      isCastExpr = true;
+      return ExprEmpty();
+    }
+
+    if (!Operand.isInvalid())
+      Operand = ParsePostfixExpressionSuffix(Operand.get());
+  }
+
+  // If we get here, the operand to the typeof/sizeof/alignof was an expresion.
+  isCastExpr = false;
+  return Operand;
+
+}
+// Mirror
 
 /// ParseExprAfterUnaryExprOrTypeTrait - We parsed a typeof/sizeof/alignof/
 /// vec_step and we are at the start of an expression or a parenthesized

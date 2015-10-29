@@ -3432,6 +3432,42 @@ public:
   static bool classof(const Type *T) { return T->getTypeClass() == TypeOf; }
 };
 
+// Mirror `reflexpr(expr)`
+class ReflexprType : public Type {
+  Expr *E;
+  QualType UnderlyingType;
+
+protected:
+  ReflexprType(Expr *E, QualType underlyingType, QualType can = QualType());
+  friend class ASTContext;  // ASTContext creates these.
+public:
+  Expr *getUnderlyingExpr() const { return E; }
+  QualType getUnderlyingType() const { return UnderlyingType; }
+
+  /// \brief Remove a single level of sugar.
+  QualType desugar() const;
+
+  /// \brief Returns whether this type directly provides sugar.
+  bool isSugared() const;
+
+  static bool classof(const Type *T) { return T->getTypeClass() == Reflexpr; }
+};
+
+// Mirror
+class DependentReflexprType : public ReflexprType, public llvm::FoldingSetNode {
+  const ASTContext &Context;
+
+public:
+  DependentReflexprType(const ASTContext &Context, Expr *E);
+
+  void Profile(llvm::FoldingSetNodeID &ID) {
+    Profile(ID, Context, getUnderlyingExpr());
+  }
+
+  static void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context,
+                      Expr *E);
+};
+
 /// Represents the type `decltype(expr)` (C++11).
 class DecltypeType : public Type {
   Expr *E;

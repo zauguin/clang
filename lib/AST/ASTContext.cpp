@@ -2618,6 +2618,7 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
   case Type::UnresolvedUsing:
   case Type::TypeOfExpr:
   case Type::TypeOf:
+  case Type::Reflexpr: // Mirror
   case Type::Decltype:
   case Type::UnaryTransform:
   case Type::DependentName:
@@ -3914,6 +3915,35 @@ QualType ASTContext::getTypeOfType(QualType tofType) const {
   Types.push_back(tot);
   return QualType(tot, 0);
 }
+
+
+
+// Mirror TODO
+QualType ASTContext::getReflexprType(Expr *e, QualType UnderlyingType) const {
+  ReflexprType *dt;
+
+  if (e->isInstantiationDependent()) {
+    llvm::FoldingSetNodeID ID;
+    DependentReflexprType::Profile(ID, *this, e);
+
+    void *InsertPos = nullptr;
+    DependentReflexprType *Canon
+      = DependentReflexprTypes.FindNodeOrInsertPos(ID, InsertPos);
+    if (!Canon) {
+      // Build a new, canonical typeof(expr) type.
+      Canon = new (*this, TypeAlignment) DependentReflexprType(*this, e);
+      DependentReflexprTypes.InsertNode(Canon, InsertPos);
+    }
+    dt = new (*this, TypeAlignment)
+        ReflexprType(e, UnderlyingType, QualType((ReflexprType *)Canon, 0));
+  } else {
+    dt = new (*this, TypeAlignment)
+        ReflexprType(e, UnderlyingType, getCanonicalType(UnderlyingType));
+  }
+  Types.push_back(dt);
+  return QualType(dt, 0);
+}
+// Mirror
 
 
 /// \brief Unlike many "get<Type>" functions, we don't unique DecltypeType

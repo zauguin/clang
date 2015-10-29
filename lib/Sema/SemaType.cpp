@@ -1448,6 +1448,18 @@ static QualType ConvertDeclSpecToType(TypeProcessingState &state) {
     }
     break;
   }
+  // Mirror
+  case DeclSpec::TST_reflexpr: {
+    Expr *E = DS.getRepAsExpr();
+    assert(E && "Didn't get an expression for reflexpr?");
+    // TypeQuals handled by caller.
+    Result = S.BuildReflexprType(E, DS.getTypeSpecTypeLoc());
+    if (Result.isNull()) {
+      Result = Context.IntTy;
+      declarator.setInvalidType(true);
+    }
+    break;
+  }
   case DeclSpec::TST_decltype: {
     Expr *E = DS.getRepAsExpr();
     assert(E && "Didn't get an expression for decltype?");
@@ -6868,6 +6880,33 @@ static QualType getDecltypeForExpr(Sema &S, Expr *E) {
 
   return T;
 }
+
+// Mirror
+static QualType getTypeForReflexprExpr(Sema &S, Expr *E) {
+
+  if (const ReflexprOperandExpr *REOE = dyn_cast<ReflexprOperandExpr>(E)) {
+    return REOE->getType();
+  }
+  return getDecltypeForExpr(S, E);
+}
+// Mirror
+
+// Mirror TODO
+QualType Sema::BuildReflexprType(Expr *E, SourceLocation Loc) {
+  ExprResult ER = CheckPlaceholderExpr(E);
+  if (ER.isInvalid()) return QualType();
+  E = ER.get();
+
+  if (ActiveTemplateInstantiations.empty() &&
+      E->HasSideEffects(Context, false)) {
+    // The expression operand for reflexpr is in an unevaluated expression
+    // context, so side effects could result in unintended consequences.
+    Diag(E->getExprLoc(), diag::warn_side_effects_unevaluated_context);
+  }
+
+  return Context.getReflexprType(E, getTypeForReflexprExpr(*this, E));
+}
+// Mirror
 
 QualType Sema::BuildDecltypeType(Expr *E, SourceLocation Loc,
                                  bool AsUnevaluated) {

@@ -1554,6 +1554,7 @@ bool Parser::TryAnnotateTypeOrScopeToken(bool EnteringContext, bool NeedType) {
   assert((Tok.is(tok::identifier) || Tok.is(tok::coloncolon) ||
           Tok.is(tok::kw_typename) || Tok.is(tok::annot_cxxscope) ||
           Tok.is(tok::kw_decltype) || Tok.is(tok::annot_template_id) ||
+          Tok.is(tok::kw_reflexpr) || // Mirror
           Tok.is(tok::kw___super)) &&
          "Cannot be a type or scope token!");
 
@@ -1589,9 +1590,10 @@ bool Parser::TryAnnotateTypeOrScopeToken(bool EnteringContext, bool NeedType) {
       return true;
     if (!SS.isSet()) {
       if (Tok.is(tok::identifier) || Tok.is(tok::annot_template_id) ||
+          Tok.is(tok::annot_reflexpr) || // Mirror
           Tok.is(tok::annot_decltype)) {
         // Attempt to recover by skipping the invalid 'typename'
-        if (Tok.is(tok::annot_decltype) ||
+        if (Tok.isOneOf(tok::annot_decltype, tok::annot_reflexpr) ||
             (!TryAnnotateTypeOrScopeToken(EnteringContext, NeedType) &&
              Tok.isAnnotation())) {
           unsigned DiagID = diag::err_expected_qualified_after_typename;
@@ -1784,7 +1786,8 @@ bool Parser::TryAnnotateCXXScopeToken(bool EnteringContext) {
          "Call sites of this function should be guarded by checking for C++");
   assert((Tok.is(tok::identifier) || Tok.is(tok::coloncolon) ||
           (Tok.is(tok::annot_template_id) && NextToken().is(tok::coloncolon)) ||
-          Tok.is(tok::kw_decltype) || Tok.is(tok::kw___super)) &&
+          // Mirror
+          Tok.is(tok::kw_decltype) || Tok.is(tok::kw_reflexpr) || Tok.is(tok::kw___super)) &&
          "Cannot be a type or scope token!");
 
   CXXScopeSpec SS;

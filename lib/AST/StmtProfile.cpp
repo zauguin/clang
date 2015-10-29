@@ -660,6 +660,15 @@ void StmtProfiler::VisitOffsetOfExpr(const OffsetOfExpr *S) {
   VisitExpr(S);
 }
 
+// Mirror
+void
+StmtProfiler::VisitReflexprOperandExpr(const ReflexprOperandExpr *S) {
+  VisitExpr(S);
+  if (S->isType())
+    VisitType(S->getType());
+}
+// Mirror
+
 void
 StmtProfiler::VisitUnaryExprOrTypeTraitExpr(const UnaryExprOrTypeTraitExpr *S) {
   VisitExpr(S);

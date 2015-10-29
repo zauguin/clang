@@ -196,6 +196,7 @@ Parser::TPResult Parser::TryConsumeDeclarationSpecifier() {
     }
 
     if (Tok.isOneOf(tok::identifier, tok::coloncolon, tok::kw_decltype,
+                    tok::kw_reflexpr, // TODO
                     tok::annot_template_id) &&
         TryAnnotateCXXScopeToken())
       return TPResult::Error;
@@ -1199,6 +1200,7 @@ Parser::isCXXDeclarationSpecifier(Parser::TPResult BracedCastResult,
   }
     // Fall through.
   case tok::kw___super:
+  case tok::kw_reflexpr: // Mirror
   case tok::kw_decltype:
     // Annotate typenames and C++ scope specifiers.  If we get one, just
     // recurse to handle whatever we get.
@@ -1423,6 +1425,7 @@ Parser::isCXXDeclarationSpecifier(Parser::TPResult BracedCastResult,
   case tok::kw_float:
   case tok::kw_double:
   case tok::kw_void:
+  case tok::annot_reflexpr: // Mirror
   case tok::annot_decltype:
     if (NextToken().is(tok::l_paren))
       return TPResult::Ambiguous;
@@ -1482,6 +1485,7 @@ Parser::isCXXDeclarationSpecifier(Parser::TPResult BracedCastResult,
 bool Parser::isCXXDeclarationSpecifierAType() {
   switch (Tok.getKind()) {
     // typename-specifier
+  case tok::annot_reflexpr: // Mirror
   case tok::annot_decltype:
   case tok::annot_template_id:
   case tok::annot_typename:

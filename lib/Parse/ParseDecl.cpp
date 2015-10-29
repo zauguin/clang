@@ -2499,6 +2499,7 @@ Parser::DiagnoseMissingSemiAfterTagDefinition(DeclSpec &DS, AccessSpecifier AS,
 
   if (getLangOpts().CPlusPlus &&
       Tok.isOneOf(tok::identifier, tok::coloncolon, tok::kw_decltype,
+                  tok::kw_reflexpr, // Mirror
                   tok::annot_template_id) &&
       TryAnnotateCXXScopeToken(EnteringContext)) {
     SkipMalformedDecl();
@@ -2913,6 +2914,7 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
 
       // typedef-name
     case tok::kw___super:
+    case tok::kw_reflexpr: // Mirror
     case tok::kw_decltype:
     case tok::identifier: {
       // This identifier can only be a typedef name if we haven't already seen
@@ -3383,6 +3385,10 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
     // GNU typeof support.
     case tok::kw_typeof:
       ParseTypeofSpecifier(DS);
+      continue;
+
+    case tok::annot_reflexpr: // Mirror
+      ParseReflexprSpecifier(DS, nullptr);
       continue;
 
     case tok::annot_decltype:
@@ -4403,6 +4409,7 @@ bool Parser::isDeclarationSpecifier(bool DisambiguatingWithExpression) {
     if (TryAltiVecVectorToken())
       return true;
     // Fall through.
+  case tok::kw_reflexpr: // Mirror reflexpr(T())::type
   case tok::kw_decltype: // decltype(T())::type
   case tok::kw_typename: // typename T::type
     // Annotate typenames and C++ scope specifiers.  If we get one, just

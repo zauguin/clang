@@ -318,8 +318,13 @@ def err_unexpected_typedef_ident : Error<
 def warn_cxx98_compat_decltype : Warning<
   "'decltype' type specifier is incompatible with C++98">,
   InGroup<CXX98Compat>, DefaultIgnore;
+def warn_cxx_compat_reflexpr : Warning<
+  "'reflexpr' specifier is an experimental extension">,
+  InGroup<CXXCompat>, DefaultIgnore;
 def err_unexpected_scope_on_base_decltype : Error<
   "unexpected namespace scope prior to decltype">;
+def err_unexpected_scope_on_base_reflexpr : Error<
+  "unexpected namespace scope prior to reflexpr">;
 def err_expected_class_name : Error<"expected class name">;
 def err_expected_class_name_not_template : 
   Error<"'typename' is redundant; base classes are implicitly types">;

@@ -710,6 +710,52 @@ VisitOffsetOfExpr(const OffsetOfExpr *OOE,
 }
 
 
+// Mirror
+void ExprEngine::
+VisitReflexprOperandExpr(const ReflexprOperandExpr *Ex,
+                              ExplodedNode *Pred,
+                              ExplodedNodeSet &Dst) {
+/* Mirror TODO
+  ExplodedNodeSet CheckedSet;
+  getCheckerManager().runCheckersForPreStmt(CheckedSet, Pred, Ex, *this);
+
+  ExplodedNodeSet EvalSet;
+  StmtNodeBuilder Bldr(CheckedSet, EvalSet, *currBldrCtx);
+
+  QualType T = Ex->getTypeOfArgument();
+
+  for (ExplodedNodeSet::iterator I = CheckedSet.begin(), E = CheckedSet.end();
+       I != E; ++I) {
+    if (Ex->getKind() == UETT_SizeOf) {
+      if (!T->isIncompleteType() && !T->isConstantSizeType()) {
+        assert(T->isVariableArrayType() && "Unknown non-constant-sized type.");
+
+        // FIXME: Add support for VLA type arguments and VLA expressions.
+        // When that happens, we should probably refactor VLASizeChecker's code.
+        continue;
+      } else if (T->getAs<ObjCObjectType>()) {
+        // Some code tries to take the sizeof an ObjCObjectType, relying that
+        // the compiler has laid out its representation.  Just report Unknown
+        // for these.
+        continue;
+      }
+    }
+
+    APSInt Value = Ex->EvaluateKnownConstInt(getContext());
+    CharUnits amt = CharUnits::fromQuantity(Value.getZExtValue());
+
+    ProgramStateRef state = (*I)->getState();
+    state = state->BindExpr(Ex, (*I)->getLocationContext(),
+                            svalBuilder.makeIntVal(amt.getQuantity(),
+                                                   Ex->getType()));
+    Bldr.generateNode(Ex, *I, state);
+  }
+
+  getCheckerManager().runCheckersForPostStmt(Dst, EvalSet, Ex, *this);
+*/
+}
+// Mirror
+
 void ExprEngine::
 VisitUnaryExprOrTypeTraitExpr(const UnaryExprOrTypeTraitExpr *Ex,
                               ExplodedNode *Pred,

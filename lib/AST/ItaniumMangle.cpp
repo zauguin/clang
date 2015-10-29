@@ -1523,6 +1523,7 @@ bool CXXNameMangler::mangleUnresolvedTypeOrSimpleId(QualType Ty,
   // (this last is not official yet)
   case Type::TypeOfExpr:
   case Type::TypeOf:
+  case Type::Reflexpr: // Mirror
   case Type::Decltype:
   case Type::TemplateTypeParm:
   case Type::UnaryTransform:
@@ -2610,6 +2611,23 @@ void CXXNameMangler::mangleType(const TypeOfExprType *T) {
   Out << "u6typeof";
 }
 
+// Mirror
+void CXXNameMangler::mangleType(const ReflexprType *T) {
+  Expr *E = T->getUnderlyingExpr();
+
+  if (isa<DeclRefExpr>(E) ||
+      isa<MemberExpr>(E) ||
+      isa<UnresolvedLookupExpr>(E) ||
+      isa<DependentScopeDeclRefExpr>(E) ||
+      isa<CXXDependentScopeMemberExpr>(E) ||
+      isa<UnresolvedMemberExpr>(E))
+    Out << "Re";
+  else
+    Out << "RE";
+  mangleExpression(E);
+  Out << 'E';
+}
+
 void CXXNameMangler::mangleType(const DecltypeType *T) {
   Expr *E = T->getUnderlyingExpr();
 
@@ -3114,6 +3132,16 @@ recurse:
     Out << "nx";
     mangleExpression(cast<CXXNoexceptExpr>(E)->getOperand());
     break;
+
+  // Mirror TODO
+  case Expr::ReflexprOperandExprClass: {
+      DiagnosticsEngine &Diags = Context.getDiags();
+      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
+                                     "cannot yet mangle reflexpr operand expr");
+      Diags.Report(DiagID);
+      return;
+  }
+  // Mirror
 
   case Expr::UnaryExprOrTypeTraitExprClass: {
     const UnaryExprOrTypeTraitExpr *SAE = cast<UnaryExprOrTypeTraitExpr>(E);

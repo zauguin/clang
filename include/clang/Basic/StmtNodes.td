@@ -65,6 +65,7 @@ def ParenExpr : DStmt<Expr>;
 def UnaryOperator : DStmt<Expr>;
 def OffsetOfExpr : DStmt<Expr>;
 def UnaryExprOrTypeTraitExpr : DStmt<Expr>;
+def ReflexprOperandExpr : DStmt<Expr>;
 def ArraySubscriptExpr : DStmt<Expr>;
 def OMPArraySectionExpr : DStmt<Expr>;
 def CallExpr : DStmt<Expr>;

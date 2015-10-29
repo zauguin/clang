@@ -179,6 +179,7 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
     case Type::Typedef:
     case Type::TypeOfExpr:
     case Type::TypeOf:
+    case Type::Reflexpr: // Mirror
     case Type::Decltype:
     case Type::UnaryTransform:
     case Type::Record:
@@ -793,6 +794,16 @@ void TypePrinter::printTypeOfBefore(const TypeOfType *T, raw_ostream &OS) {
   spaceBeforePlaceHolder(OS);
 }
 void TypePrinter::printTypeOfAfter(const TypeOfType *T, raw_ostream &OS) { } 
+
+// Mirror
+void TypePrinter::printReflexprBefore(const ReflexprType *T, raw_ostream &OS) { 
+  OS << "reflexpr";
+  if (T->getUnderlyingExpr())
+    T->getUnderlyingExpr()->printPretty(OS, nullptr, Policy);
+  spaceBeforePlaceHolder(OS);
+}
+void TypePrinter::printReflexprAfter(const ReflexprType *T, raw_ostream &OS) { } 
+// Mirror
 
 void TypePrinter::printDecltypeBefore(const DecltypeType *T, raw_ostream &OS) { 
   OS << "decltype(";

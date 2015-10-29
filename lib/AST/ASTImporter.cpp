@@ -61,6 +61,7 @@ namespace clang {
     QualType VisitTypeOfExprType(const TypeOfExprType *T);
     // FIXME: DependentTypeOfExprType
     QualType VisitTypeOfType(const TypeOfType *T);
+    QualType VisitReflexprType(const ReflexprType *T); // Mirror
     QualType VisitDecltypeType(const DecltypeType *T);
     QualType VisitUnaryTransformType(const UnaryTransformType *T);
     QualType VisitAutoType(const AutoType *T);
@@ -674,6 +675,14 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
     if (!IsStructurallyEquivalent(Context,
                              cast<UnaryTransformType>(T1)->getUnderlyingType(),
                              cast<UnaryTransformType>(T1)->getUnderlyingType()))
+      return false;
+    break;
+
+  // Mirror
+  case Type::Reflexpr:
+    if (!IsStructurallyEquivalent(Context,
+                                  cast<ReflexprType>(T1)->getUnderlyingExpr(),
+                                  cast<ReflexprType>(T2)->getUnderlyingExpr()))
       return false;
     break;
 
@@ -1711,6 +1720,21 @@ QualType ASTNodeImporter::VisitTypeOfType(const TypeOfType *T) {
   
   return Importer.getToContext().getTypeOfType(ToUnderlyingType);
 }
+
+// Mirror
+QualType ASTNodeImporter::VisitReflexprType(const ReflexprType *T) {
+  // FIXME: Make sure that the "to" context supports C++0x!
+  Expr *ToExpr = Importer.Import(T->getUnderlyingExpr());
+  if (!ToExpr)
+    return QualType();
+  
+  QualType UnderlyingType = Importer.Import(T->getUnderlyingType());
+  if (UnderlyingType.isNull())
+    return QualType();
+
+  return Importer.getToContext().getReflexprType(ToExpr, UnderlyingType);
+}
+// Mirror
 
 QualType ASTNodeImporter::VisitDecltypeType(const DecltypeType *T) {
   // FIXME: Make sure that the "to" context supports C++0x!

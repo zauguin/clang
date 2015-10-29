@@ -1985,6 +1985,73 @@ public:
   }
 };
 
+// Mirror
+class ReflexprOperandExpr : public Expr {
+  union {
+    TypeSourceInfo *Ty;
+    Stmt *Ex;
+  } Argument;
+  SourceLocation OpLoc, RParenLoc;
+public:
+  ReflexprOperandExpr(TypeSourceInfo *TInfo,
+                      QualType argType, SourceLocation op,
+                      SourceLocation rp) :
+      Expr(ReflexprOperandExprClass, argType, VK_RValue, OK_Ordinary,
+           false, // Never type-dependent (C++ [temp.dep.expr]p3).
+           // Value-dependent if the argument is type-dependent.
+           TInfo->getType()->isDependentType(),
+           TInfo->getType()->isInstantiationDependentType(),
+           TInfo->getType()->containsUnexpandedParameterPack()),
+      OpLoc(op), RParenLoc(rp) {
+    ReflexprOperandExprBits.IsType = true;
+    Argument.Ty = TInfo;
+  }
+
+  ReflexprOperandExpr(Expr *E,
+                      QualType resultType, SourceLocation op,
+                      SourceLocation rp);
+
+  /// \brief Construct an empty sizeof/alignof expression.
+  explicit ReflexprOperandExpr(EmptyShell Empty)
+    : Expr(ReflexprOperandExprClass, Empty) { }
+
+  bool isType() const { return ReflexprOperandExprBits.IsType; }
+
+  QualType getType() const {
+    return getTypeInfo()->getType();
+  }
+
+  TypeSourceInfo *getTypeInfo() const {
+    assert(isType() && "calling getType() when arg is expr");
+    return Argument.Ty;
+  }
+
+  Expr *getExpr() {
+    assert(!isType() && "calling getExpr() when arg is type");
+    return static_cast<Expr*>(Argument.Ex);
+  }
+
+  const Expr *getExpr() const {
+    return const_cast<ReflexprOperandExpr*>(this)->getExpr();
+  }
+
+  SourceLocation getOperatorLoc() const { return OpLoc; }
+  void setOperatorLoc(SourceLocation L) { OpLoc = L; }
+
+  SourceLocation getRParenLoc() const { return RParenLoc; }
+  void setRParenLoc(SourceLocation L) { RParenLoc = L; }
+
+  SourceLocation getLocStart() const LLVM_READONLY { return OpLoc; }
+  SourceLocation getLocEnd() const LLVM_READONLY { return RParenLoc; }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == ReflexprOperandExprClass;
+  }
+
+  // Iterators
+  child_range children();
+};
+
 /// UnaryExprOrTypeTraitExpr - expression with either a type or (unevaluated)
 /// expression operand.  Used for sizeof/alignof (C99 6.5.3.4) and
 /// vec_step (OpenCL 1.1 6.11.12).

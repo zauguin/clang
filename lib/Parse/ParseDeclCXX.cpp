@@ -750,6 +750,98 @@ Decl *Parser::ParseStaticAssertDeclaration(SourceLocation &DeclEnd){
                                               T.getCloseLocation());
 }
 
+// Mirror
+/// ParseReflexprSpecifier - Parse the reflexpr specifier.
+///
+/// 'reflexpr' ( expression )
+///
+ExprResult Parser::ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc ) {
+  assert(Tok.isOneOf(tok::kw_reflexpr, tok::annot_reflexpr)
+           && "Not a reflexpr specifier");
+
+  Token OpTok = Tok;
+
+  ExprResult Result = ExprError();
+  SourceLocation StartLoc = Tok.getLocation();
+
+  if (Tok.is(tok::annot_reflexpr)) {
+    Result = getExprAnnotation(Tok);
+    if(Loc) *Loc = Tok.getAnnotationEndLoc();
+    ConsumeToken();
+    if (Result.isInvalid()) {
+      DS.SetTypeSpecError();
+      return Result;
+    }
+  } else {
+    if (Tok.getIdentifierInfo()->isStr("reflexpr"))
+      Diag(Tok, diag::warn_cxx_compat_reflexpr);
+
+    ConsumeToken();
+
+    // Parse the expression
+    EnterExpressionEvaluationContext Unevaluated(Actions, Sema::Unevaluated,
+                                                 nullptr,
+                                                 /*IsDecltype=*/false,
+                                                 /*IsReflexpr=*/true);
+    bool isCastExpr = false;
+    ParsedType ExprTy;
+    SourceRange ExprRange;
+    Result = Actions.CorrectDelayedTyposInExpr(
+         ParseExprAfterReflexpr(OpTok, isCastExpr, ExprTy, ExprRange),
+         [](Expr *E) {
+           return E->hasPlaceholderType() ? ExprError() : E;
+    });
+
+    if (Result.isInvalid()) {
+
+      DS.SetTypeSpecError();
+      if (SkipUntil(tok::r_paren, StopAtSemi | StopBeforeMatch)) {
+        if(Loc) *Loc = ConsumeParen();
+      } else {
+        if (PP.isBacktrackEnabled() && Tok.is(tok::semi)) {
+          // Backtrack to get the location of the last token before the semi.
+          PP.RevertCachedTokens(2);
+          ConsumeToken(); // the semi.
+          if(Loc) *Loc = ConsumeAnyToken();
+          assert(Tok.is(tok::semi));
+        } else {
+          if(Loc) *Loc = Tok.getLocation();
+        }
+      }
+      return Result;
+    }
+
+    if(Result.isUnset()) {
+      Result = Actions.ActOnReflexprExpression(Tok.getLocation(),
+                                               ExprRange,
+                                               ExprTy);
+    } else {
+      Result = Actions.ActOnReflexprExpression(Result.get());
+    }
+
+    if (Result.isInvalid()) {
+      DS.SetTypeSpecError();
+      if(Loc) *Loc = ExprRange.getEnd();
+      return Result;
+    }
+
+    if(Loc) *Loc = ExprRange.getEnd();
+  }
+  assert(!Result.isInvalid());
+
+  const char *PrevSpec = nullptr;
+  unsigned DiagID;
+  const PrintingPolicy &Policy = Actions.getASTContext().getPrintingPolicy();
+  // Check for duplicate type specifiers (e.g. "int reflexpr(a)").
+  if (DS.SetTypeSpecType(DeclSpec::TST_reflexpr, StartLoc, PrevSpec,
+                             DiagID, Result.get(), Policy)) {
+    Diag(StartLoc, DiagID) << PrevSpec;
+    DS.SetTypeSpecError();
+  }
+  return Result;
+}
+// Mirror
+
 /// ParseDecltypeSpecifier - Parse a C++11 decltype specifier.
 ///
 /// 'decltype' ( expression )
@@ -860,6 +952,26 @@ SourceLocation Parser::ParseDecltypeSpecifier(DeclSpec &DS) {
   return EndLoc;
 }
 
+// Mirror
+void Parser::AnnotateExistingReflexprSpecifier(const DeclSpec& DS, 
+                                               SourceLocation StartLoc,
+                                               SourceLocation EndLoc) {
+  // make sure we have a token we can turn into an annotation token
+  if (PP.isBacktrackEnabled())
+    PP.RevertCachedTokens(1);
+  else
+    PP.EnterToken(Tok);
+
+  Tok.setKind(tok::annot_reflexpr);
+  setExprAnnotation(Tok,
+                    DS.getTypeSpecType() == TST_reflexpr ? DS.getRepAsExpr() :
+                    ExprError());
+  Tok.setAnnotationEndLoc(EndLoc);
+  Tok.setLocation(StartLoc);
+  PP.AnnotateCachedTokens(Tok);
+}
+// Mirror
+
 void Parser::AnnotateExistingDecltypeSpecifier(const DeclSpec& DS, 
                                                SourceLocation StartLoc,
                                                SourceLocation EndLoc) {
@@ -954,6 +1066,17 @@ TypeResult Parser::ParseBaseTypeSpecifier(SourceLocation &BaseLoc,
     DeclSpec DS(AttrFactory);
 
     EndLocation = ParseDecltypeSpecifier(DS);
+
+    Declarator DeclaratorInfo(DS, Declarator::TypeNameContext);
+    return Actions.ActOnTypeName(getCurScope(), DeclaratorInfo);
+  } else if (Tok.isOneOf(tok::kw_reflexpr, tok::annot_reflexpr)) { // Mirror
+    if (SS.isNotEmpty())
+      Diag(SS.getBeginLoc(), diag::err_unexpected_scope_on_base_reflexpr)
+        << FixItHint::CreateRemoval(SS.getRange());
+    // Fake up a Declarator to use with ActOnTypeName.
+    DeclSpec DS(AttrFactory);
+
+    ParseReflexprSpecifier(DS, &EndLocation);
 
     Declarator DeclaratorInfo(DS, Declarator::TypeNameContext);
     return Actions.ActOnTypeName(getCurScope(), DeclaratorInfo);
@@ -3239,7 +3362,8 @@ MemInitResult Parser::ParseMemInitializer(Decl *ConstructorDecl) {
   // Uses of decltype will already have been converted to annot_decltype by
   // ParseOptionalCXXScopeSpecifier at this point.
   if (!TemplateTypeTy && Tok.isNot(tok::identifier)
-      && Tok.isNot(tok::annot_decltype)) {
+      // Mirror
+      && (Tok.isNot(tok::annot_decltype) && Tok.isNot(tok::annot_reflexpr))) {
     Diag(Tok, diag::err_expected_member_or_base_name);
     return true;
   }
@@ -3250,6 +3374,9 @@ MemInitResult Parser::ParseMemInitializer(Decl *ConstructorDecl) {
   if (Tok.is(tok::annot_decltype)) {
     // Get the decltype expression, if there is one.
     ParseDecltypeSpecifier(DS);
+  } else if (Tok.is(tok::annot_reflexpr)) { // Mirror
+    // Get the reflexpr expression, if there is one.
+    ParseReflexprSpecifier(DS, nullptr);
   } else {
     if (Tok.is(tok::identifier))
       // Get the identifier. This may be a member name or a class name,

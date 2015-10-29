@@ -894,6 +894,7 @@ public:
   TRIVIAL_TYPE_CLASS(TypeOfExpr)
   TRIVIAL_TYPE_CLASS(TypeOf)
   TRIVIAL_TYPE_CLASS(Decltype)
+  TRIVIAL_TYPE_CLASS(Reflexpr) // Mirror
   TRIVIAL_TYPE_CLASS(UnaryTransform)
   TRIVIAL_TYPE_CLASS(Record)
   TRIVIAL_TYPE_CLASS(Enum)
@@ -2880,6 +2881,34 @@ void DependentTypeOfExprType::Profile(llvm::FoldingSetNodeID &ID,
   E->Profile(ID, Context, true);
 }
 
+// Mirror
+ReflexprType::ReflexprType(Expr *e, QualType underlyingType, QualType can)
+  : Type(Reflexpr, can, e->isInstantiationDependent(),
+         e->isInstantiationDependent(),
+         e->getType()->isVariablyModifiedType(),
+         e->containsUnexpandedParameterPack()),
+    E(e),
+  UnderlyingType(underlyingType) {
+}
+
+bool ReflexprType::isSugared() const { return !E->isInstantiationDependent(); }
+
+QualType ReflexprType::desugar() const {
+  if (isSugared())
+    return getUnderlyingType();
+  
+  return QualType(this, 0);
+}
+
+DependentReflexprType::DependentReflexprType(const ASTContext &Context, Expr *E)
+  : ReflexprType(E, Context.DependentTy), Context(Context) { }
+
+void DependentReflexprType::Profile(llvm::FoldingSetNodeID &ID,
+                                    const ASTContext &Context, Expr *E) {
+  E->Profile(ID, Context, true);
+}
+// Mirror
+
 DecltypeType::DecltypeType(Expr *E, QualType underlyingType, QualType can)
   // C++11 [temp.type]p2: "If an expression e involves a template parameter,
   // decltype(e) denotes a unique dependent type." Hence a decltype type is
@@ -2891,6 +2920,7 @@ DecltypeType::DecltypeType(Expr *E, QualType underlyingType, QualType can)
     E(E),
   UnderlyingType(underlyingType) {
 }
+// Mirror
 
 bool DecltypeType::isSugared() const { return !E->isInstantiationDependent(); }
 
@@ -3486,6 +3516,7 @@ bool Type::canHaveNullability() const {
   case Type::UnresolvedUsing:
   case Type::TypeOfExpr:
   case Type::TypeOf:
+  case Type::Reflexpr: // Mirror
   case Type::Decltype:
   case Type::UnaryTransform:
   case Type::TemplateTypeParm:

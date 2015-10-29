@@ -1638,6 +1638,7 @@ DeduceTemplateArgumentsByTypeMatch(Sema &S,
     case Type::TypeOf:
     case Type::DependentName:
     case Type::UnresolvedUsing:
+    case Type::Reflexpr:
     case Type::Decltype:
     case Type::UnaryTransform:
     case Type::Auto:
@@ -4858,6 +4859,14 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
     if (!OnlyDeduced)
       MarkUsedTemplateParameters(Ctx,
                                  cast<TypeOfExprType>(T)->getUnderlyingExpr(),
+                                 OnlyDeduced, Depth, Used);
+    break;
+
+  // Mirror
+  case Type::Reflexpr:
+    if (!OnlyDeduced)
+      MarkUsedTemplateParameters(Ctx,
+                                 cast<ReflexprType>(T)->getUnderlyingExpr(),
                                  OnlyDeduced, Depth, Used);
     break;
 

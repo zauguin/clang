@@ -1654,6 +1654,16 @@ public:
   void initializeLocal(ASTContext &Context, SourceLocation Loc);
 };
 
+// Mirror
+class ReflexprTypeLoc : public InheritingConcreteTypeLoc<TypeSpecTypeLoc,
+                                                         ReflexprTypeLoc,
+                                                         ReflexprType> {
+public:
+  Expr *getUnderlyingExpr() const { return getTypePtr()->getUnderlyingExpr(); }
+};
+// Mirror
+
+
 // FIXME: location of the 'decltype' and parens.
 class DecltypeTypeLoc : public InheritingConcreteTypeLoc<TypeSpecTypeLoc,
                                                          DecltypeTypeLoc,

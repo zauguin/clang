@@ -5412,7 +5412,8 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
   if (RD->isInvalidDecl() || RD->isDependentContext())
     return E;
 
-  bool IsDecltype = ExprEvalContexts.back().IsDecltype;
+  bool IsDecltype = ExprEvalContexts.back().IsDecltype||
+                    ExprEvalContexts.back().IsReflexpr; // Mirror
   CXXDestructorDecl *Destructor = IsDecltype ? nullptr : LookupDestructor(RD);
 
   if (Destructor) {
@@ -5487,6 +5488,101 @@ Stmt *Sema::MaybeCreateStmtWithCleanups(Stmt *SubStmt) {
                                    SourceLocation());
   return MaybeCreateExprWithCleanups(E);
 }
+
+// Mirror
+ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
+                                         SourceRange ArgRange,
+                                         ParsedType& ExprTy) {
+    TypeSourceInfo *TInfo;
+    (void) GetTypeFromParser(ExprTy, &TInfo);
+    return CreateReflexprOperandExpr(TInfo, OpLoc, ArgRange);
+}
+// Mirror
+
+// Mirror
+/// Process the expression contained within a reflexpr.
+ExprResult Sema::ActOnReflexprExpression(Expr *E) {
+  assert(ExprEvalContexts.back().IsReflexpr && "not in a reflexpr expression");
+
+  // Recursively rebuild ParenExprs and comma expressions to strip out the
+  // outermost CXXBindTemporaryExpr, if any.
+  if (ParenExpr *PE = dyn_cast<ParenExpr>(E)) {
+    ExprResult SubExpr = ActOnReflexprExpression(PE->getSubExpr());
+    if (SubExpr.isInvalid())
+      return ExprError();
+    if (SubExpr.get() == PE->getSubExpr())
+      return E;
+    return ActOnParenExpr(PE->getLParen(), PE->getRParen(), SubExpr.get());
+  }
+  if (BinaryOperator *BO = dyn_cast<BinaryOperator>(E)) {
+    if (BO->getOpcode() == BO_Comma) {
+      ExprResult RHS = ActOnReflexprExpression(BO->getRHS());
+      if (RHS.isInvalid())
+        return ExprError();
+      if (RHS.get() == BO->getRHS())
+        return E;
+      return new (Context) BinaryOperator(
+          BO->getLHS(), RHS.get(), BO_Comma, BO->getType(), BO->getValueKind(),
+          BO->getObjectKind(), BO->getOperatorLoc(), BO->isFPContractable());
+    }
+  }
+
+  CXXBindTemporaryExpr *TopBind = dyn_cast<CXXBindTemporaryExpr>(E);
+  CallExpr *TopCall = TopBind ? dyn_cast<CallExpr>(TopBind->getSubExpr())
+                              : nullptr;
+  if (TopCall)
+    E = TopCall;
+  else
+    TopBind = nullptr;
+
+  // Disable the special decltype handling now.
+  ExprEvalContexts.back().IsDecltype = false; // Mirror TODO
+
+  // Perform the semantic checks we delayed until this point.
+  for (unsigned I = 0, N = ExprEvalContexts.back().DelayedDecltypeCalls.size();
+       I != N; ++I) {
+    CallExpr *Call = ExprEvalContexts.back().DelayedDecltypeCalls[I];
+    if (Call == TopCall)
+      continue;
+
+    if (CheckCallReturnType(Call->getCallReturnType(Context),
+                            Call->getLocStart(),
+                            Call, Call->getDirectCallee()))
+      return ExprError();
+  }
+
+  // Now all relevant types are complete, check the destructors are accessible
+  // and non-deleted, and annotate them on the temporaries.
+  for (unsigned I = 0, N = ExprEvalContexts.back().DelayedDecltypeBinds.size();
+       I != N; ++I) {
+    CXXBindTemporaryExpr *Bind =
+      ExprEvalContexts.back().DelayedDecltypeBinds[I];
+    if (Bind == TopBind)
+      continue;
+
+    CXXTemporary *Temp = Bind->getTemporary();
+
+    CXXRecordDecl *RD =
+      Bind->getType()->getBaseElementTypeUnsafe()->getAsCXXRecordDecl();
+    CXXDestructorDecl *Destructor = LookupDestructor(RD);
+    Temp->setDestructor(Destructor);
+
+    MarkFunctionReferenced(Bind->getExprLoc(), Destructor);
+    CheckDestructorAccess(Bind->getExprLoc(), Destructor,
+                          PDiag(diag::err_access_dtor_temp)
+                            << Bind->getType());
+    if (DiagnoseUseOfDecl(Destructor, Bind->getExprLoc()))
+      return ExprError();
+
+    // We need a cleanup, but we don't need to remember the temporary.
+    ExprNeedsCleanups = true;
+  }
+
+  // Possibly strip off the top CXXBindTemporaryExpr.
+  return E;
+}
+// Mirror
+
 
 /// Process the expression contained within a decltype. For such expressions,
 /// certain semantic checks on temporaries are delayed until this point, and

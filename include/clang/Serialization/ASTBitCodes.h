@@ -895,7 +895,9 @@ namespace clang {
       /// \brief A DecayedType record.
       TYPE_DECAYED               = 41,
       /// \brief An AdjustedType record.
-      TYPE_ADJUSTED              = 42
+      TYPE_ADJUSTED              = 42,
+      // Mirror
+      TYPE_REFLEXPR              = 47
     };
 
     /// \brief The type IDs for special types constructed by semantic
@@ -1216,6 +1218,8 @@ namespace clang {
       EXPR_UNARY_OPERATOR,
       /// \brief An OffsetOfExpr record.
       EXPR_OFFSETOF,
+      // Mirror
+      EXPR_REFLEXPR_OP,
       /// \brief A SizefAlignOfExpr record.
       EXPR_SIZEOF_ALIGN_OF,
       /// \brief An ArraySubscriptExpr record.

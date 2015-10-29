@@ -253,22 +253,39 @@ bool Parser::ParseOptionalCXXScopeSpecifier(CXXScopeSpec &SS,
     return Actions.ActOnSuperScopeSpecifier(SuperLoc, ConsumeToken(), SS);
   }
 
-  if (!HasScopeSpecifier &&
-      Tok.isOneOf(tok::kw_decltype, tok::annot_decltype)) {
-    DeclSpec DS(AttrFactory);
-    SourceLocation DeclLoc = Tok.getLocation();
-    SourceLocation EndLoc  = ParseDecltypeSpecifier(DS);
+  if (!HasScopeSpecifier) {
+    if(Tok.isOneOf(tok::kw_decltype, tok::annot_decltype)) {
+      DeclSpec DS(AttrFactory);
+      SourceLocation DeclLoc = Tok.getLocation();
+      SourceLocation EndLoc  = ParseDecltypeSpecifier(DS);
 
-    SourceLocation CCLoc;
-    if (!TryConsumeToken(tok::coloncolon, CCLoc)) {
-      AnnotateExistingDecltypeSpecifier(DS, DeclLoc, EndLoc);
-      return false;
+      SourceLocation CCLoc;
+      if (!TryConsumeToken(tok::coloncolon, CCLoc)) {
+        AnnotateExistingDecltypeSpecifier(DS, DeclLoc, EndLoc);
+        return false;
+      }
+
+      if (Actions.ActOnCXXNestedNameSpecifierDecltype(SS, DS, CCLoc))
+        SS.SetInvalid(SourceRange(DeclLoc, CCLoc));
+
+      HasScopeSpecifier = true;
+    } else if(Tok.isOneOf(tok::kw_reflexpr, tok::annot_reflexpr)) {
+      DeclSpec DS(AttrFactory);
+      SourceLocation DeclLoc = Tok.getLocation();
+      SourceLocation EndLoc;
+      ParseReflexprSpecifier(DS, &EndLoc);
+
+      SourceLocation CCLoc;
+      if (!TryConsumeToken(tok::coloncolon, CCLoc)) {
+        AnnotateExistingReflexprSpecifier(DS, DeclLoc, EndLoc);
+        return false;
+      }
+
+      if (Actions.ActOnCXXNestedNameSpecifierReflexpr(SS, DS, CCLoc))
+        SS.SetInvalid(SourceRange(DeclLoc, CCLoc));
+
+      HasScopeSpecifier = true;
     }
-
-    if (Actions.ActOnCXXNestedNameSpecifierDecltype(SS, DS, CCLoc))
-      SS.SetInvalid(SourceRange(DeclLoc, CCLoc));
-
-    HasScopeSpecifier = true;
   }
 
   while (true) {
@@ -1876,6 +1893,15 @@ void Parser::ParseCXXSimpleTypeSpecifier(DeclSpec &DS) {
   case tok::kw_decltype:
     DS.SetRangeEnd(ParseDecltypeSpecifier(DS));
     return DS.Finish(Diags, PP, Policy);
+
+  // Mirror reflexpr
+  case tok::annot_reflexpr:
+  case tok::kw_reflexpr: {
+    SourceLocation EndLoc;
+    ParseReflexprSpecifier(DS, &EndLoc);
+    DS.SetRangeEnd(EndLoc);
+    return DS.Finish(Diags, PP, Policy);
+  }
 
   // GNU typeof support.
   case tok::kw_typeof:

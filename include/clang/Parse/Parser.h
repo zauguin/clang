@@ -1425,6 +1425,12 @@ private:
   ExprResult ParseUnaryExprOrTypeTraitExpression();
   ExprResult ParseBuiltinPrimaryExpression();
 
+  // Mirror
+  ExprResult ParseExprAfterReflexpr(const Token &OpTok,
+                                    bool &isCastExpr,
+                                    ParsedType &CastTy,
+                                    SourceRange &CastRange);
+
   ExprResult ParseExprAfterUnaryExprOrTypeTrait(const Token &OpTok,
                                                      bool &isCastExpr,
                                                      ParsedType &CastTy,
@@ -2218,11 +2224,21 @@ private:
                                  SourceLocation ScopeLoc,
                                  AttributeList::Syntax Syntax);
 
+  // Mirror
+  ExprResult ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc);
+
   void ParseTypeofSpecifier(DeclSpec &DS);
   SourceLocation ParseDecltypeSpecifier(DeclSpec &DS);
+
+  // Mirror
+  void AnnotateExistingReflexprSpecifier(const DeclSpec &DS,
+                                         SourceLocation StartLoc,
+                                         SourceLocation EndLoc);
+
   void AnnotateExistingDecltypeSpecifier(const DeclSpec &DS,
                                          SourceLocation StartLoc,
                                          SourceLocation EndLoc);
+
   void ParseUnderlyingTypeSpecifier(DeclSpec &DS);
   void ParseAtomicSpecifier(DeclSpec &DS);
 

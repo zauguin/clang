@@ -4050,6 +4050,12 @@ bool UnnamedLocalNoLinkageFinder::VisitTypeOfType(const TypeOfType* T) {
   return Visit(T->getUnderlyingType());
 }
 
+// Mirror
+bool UnnamedLocalNoLinkageFinder::VisitReflexprType(const ReflexprType*) {
+  return false;
+}
+// Mirror
+
 bool UnnamedLocalNoLinkageFinder::VisitDecltypeType(const DecltypeType*) {
   return false;
 }
