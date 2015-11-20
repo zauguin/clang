@@ -1284,7 +1284,79 @@ public:
   QualType getTypeOfType(QualType t) const;
 
   // Mirror
-  QualType getReflexprType(Expr *e, QualType UnderlyingType) const;
+  void addMetaobjectTypedef(CXXRecordDecl* mo_decl,
+                             const StringRef& identifier,
+                             QualType td_type,
+                             SourceLocation loc);
+
+  // Mirror
+  void addMetaobjectCTString(CXXRecordDecl* mo_decl,
+                             const StringRef& identifier,
+                             const StringRef& value,
+                             SourceLocation loc);
+  // Mirror
+  void addMetaobjectCTString(CXXRecordDecl* mo_decl,
+                             const StringRef& identifier,
+                             const IdentifierInfo* value,
+                             SourceLocation loc);
+
+  // Mirror
+  void addMetaobjectUIntTrait(CXXRecordDecl* mo_decl,
+                              const StringRef& identifier,
+                              unsigned value,
+                              SourceLocation loc);
+
+  // Mirror
+  void addMetaobjectBoolTrait(CXXRecordDecl* mo_decl,
+                              const StringRef& identifier,
+                              bool value,
+                              SourceLocation loc);
+
+  // Mirror
+  void addMetaobjectSourceInfo(CXXRecordDecl* mo_decl,
+                               const Decl* ro_decl,
+                               SourceLocation loc);
+
+  // Mirror
+  void addMetaobjectBase(CXXRecordDecl* mo_decl,
+                         const StringRef& mo_base_name,
+                         SourceLocation loc);
+
+  // Mirror
+  void addMetaobjectInjectDecl(CXXRecordDecl* mo_decl,
+                               IdentifierInfo& mo_ident,
+                               SourceLocation loc);
+
+  // Mirror
+  std::string makeMetaNamespaceName(const NamespaceDecl* ns_decl);
+
+  std::string makeMetaTypeName(QualType type);
+
+  // Mirror
+  CXXRecordDecl* lookupPrevMetaobjectDecl(IdentifierInfo& mo_ident);
+
+  // Mirror
+  CXXRecordDecl* createNewMetaobjectDecl(IdentifierInfo& mo_ident,
+                                         SourceLocation loc);
+
+  // Mirror
+  QualType finalizeMetaobject(CXXRecordDecl* mo_decl);
+
+  // Mirror
+  QualType getMetaGlobalScope(void);
+
+  // Mirror
+  QualType getMetaNamespace(const NamespaceDecl* ns_decl);
+
+  // Mirror
+  QualType getMetaType(QualType ReflectedType);
+
+  // Mirror
+  QualType getMetaobject(Expr* e, QualType ReflectedType);
+
+  // Mirror
+  QualType getReflexprType(Expr *e, QualType ReflectedType);
+  // Mirror
 
   /// \brief C++11 decltype.
   QualType getDecltypeType(Expr *e, QualType UnderlyingType) const;

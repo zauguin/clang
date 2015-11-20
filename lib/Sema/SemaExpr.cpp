@@ -3744,6 +3744,13 @@ bool Sema::CheckVecStepExpr(Expr *E) {
 
 // Mirror
 ExprResult
+Sema::CreateReflexprOperandExpr(SourceLocation OpLoc, SourceRange R) {
+
+  return new (Context) ReflexprOperandExpr(OpLoc, R.getEnd());
+}
+
+// Mirror
+ExprResult
 Sema::CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
                                 SourceLocation OpLoc,
                                 SourceRange R) {
@@ -3752,16 +3759,17 @@ Sema::CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
 
   QualType T = TInfo->getType();
 
-/* Mirror TODO do we need complete type here ?
-  if (!T->isDependentType() &&
-      RequireCompleteType(OpLoc, T, R))
+  //Mirror TODO do we need complete type here ?
+  /*
+  if (!T->isDependentType() && RequireCompleteType(OpLoc, T, R)) {
     return ExprError();
-*/
+  }
+  */
 
-  // Mirror TODO:
   return new (Context) ReflexprOperandExpr(TInfo, T, OpLoc, R.getEnd());
 }
 
+// Mirror
 ExprResult
 Sema::CreateReflexprOperandExpr(Expr* E,
                                 SourceLocation OpLoc,

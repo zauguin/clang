@@ -6885,17 +6885,28 @@ static QualType getDecltypeForExpr(Sema &S, Expr *E) {
 static QualType getTypeForReflexprExpr(Sema &S, Expr *E) {
 
   if (const ReflexprOperandExpr *REOE = dyn_cast<ReflexprOperandExpr>(E)) {
-    return REOE->getType();
+    if(REOE->isType()) {
+      return REOE->getType();
+    } else {
+      return QualType();
+    }
   }
   return getDecltypeForExpr(S, E);
 }
 // Mirror
 
+// Mirror
+
+// Mirror
+
 // Mirror TODO
 QualType Sema::BuildReflexprType(Expr *E, SourceLocation Loc) {
-  ExprResult ER = CheckPlaceholderExpr(E);
-  if (ER.isInvalid()) return QualType();
-  E = ER.get();
+
+  if(!E->getType().isNull()) {
+    ExprResult ER = CheckPlaceholderExpr(E);
+    if (ER.isInvalid()) return QualType();
+    E = ER.get();
+  }
 
   if (ActiveTemplateInstantiations.empty() &&
       E->HasSideEffects(Context, false)) {

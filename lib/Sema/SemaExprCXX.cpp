@@ -3531,6 +3531,7 @@ static bool CheckUnaryTypeTraitTypeCompleteness(Sema &S, TypeTrait UTT,
   case UTT_IsEnum:
   case UTT_IsUnion:
   case UTT_IsClass:
+  case UTT_IsMetaobject: // Mirror
   case UTT_IsFunction:
   case UTT_IsReference:
   case UTT_IsArithmetic:
@@ -3670,6 +3671,10 @@ static bool EvaluateUnaryTypeTrait(Sema &Self, TypeTrait UTT,
     return T->isUnionType();
   case UTT_IsClass:
     return T->isClassType() || T->isStructureType() || T->isInterfaceType();
+  // Mirror
+  case UTT_IsMetaobject:
+    return T->isMetaobjectType();
+  // Mirror
   case UTT_IsFunction:
     return T->isFunctionType();
 
@@ -5490,12 +5495,43 @@ Stmt *Sema::MaybeCreateStmtWithCleanups(Stmt *SubStmt) {
 }
 
 // Mirror
+bool Sema::isReflexprHeaderIncluded(SourceLocation OpLoc) {
+  TranslationUnitDecl *TUDecl = Context.getTranslationUnitDecl();
+  assert(TUDecl != nullptr);
+  DeclContextLookupResult molr =
+    TUDecl->lookup(&Context.Idents.get("__reflexpr_metaobject"));
+  if(molr.empty())
+  {
+    Diag(OpLoc, diag::err_need_header_before_reflexpr);
+    return false;
+  }
+  return true;
+}
+
+// Mirror
 ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
                                          SourceRange ArgRange,
                                          ParsedType& ExprTy) {
-    TypeSourceInfo *TInfo;
-    (void) GetTypeFromParser(ExprTy, &TInfo);
-    return CreateReflexprOperandExpr(TInfo, OpLoc, ArgRange);
+
+  if(!isReflexprHeaderIncluded(OpLoc)) {
+    return ExprError();
+  }
+
+  TypeSourceInfo *TInfo;
+  (void) GetTypeFromParser(ExprTy, &TInfo);
+  return CreateReflexprOperandExpr(TInfo, OpLoc, ArgRange);
+}
+// Mirror
+
+// Mirror
+ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
+                                         SourceRange ArgRange) {
+
+  if(!isReflexprHeaderIncluded(OpLoc)) {
+    return ExprError();
+  }
+
+  return CreateReflexprOperandExpr(OpLoc, ArgRange);
 }
 // Mirror
 

@@ -1390,6 +1390,7 @@ void ASTDeclReader::ReadCXXDefinitionData(
                                    struct CXXRecordDecl::DefinitionData &Data,
                                    const RecordData &Record, unsigned &Idx) {
   // Note: the caller has deserialized the IsLambda bit already.
+  Data.IsMetaobject = Record[Idx++];
   Data.UserDeclaredConstructor = Record[Idx++];
   Data.UserDeclaredSpecialMembers = Record[Idx++];
   Data.Aggregate = Record[Idx++];

@@ -1728,11 +1728,12 @@ QualType ASTNodeImporter::VisitReflexprType(const ReflexprType *T) {
   if (!ToExpr)
     return QualType();
   
-  QualType UnderlyingType = Importer.Import(T->getUnderlyingType());
-  if (UnderlyingType.isNull())
+  // TODO: Reflected/Reflecting ?
+  QualType ReflectedType = Importer.Import(T->getReflectedType());
+  if (ReflectedType.isNull())
     return QualType();
 
-  return Importer.getToContext().getReflexprType(ToExpr, UnderlyingType);
+  return Importer.getToContext().getReflexprType(ToExpr, ReflectedType);
 }
 // Mirror
 
@@ -2073,6 +2074,8 @@ bool ASTNodeImporter::ImportDefinition(RecordDecl *From, RecordDecl *To,
     ToData.HasDeclaredCopyAssignmentWithConstParam
       = FromData.HasDeclaredCopyAssignmentWithConstParam;
     ToData.IsLambda = FromData.IsLambda;
+    // Mirror
+    ToData.IsMetaobject = FromData.IsMetaobject;
 
     SmallVector<CXXBaseSpecifier *, 4> Bases;
     for (const auto &Base1 : FromCXX->bases()) {

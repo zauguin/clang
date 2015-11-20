@@ -5548,6 +5548,9 @@ def err_bad_dynamic_cast_not_ptr : Error<"%0 is not a pointer">;
 def err_bad_dynamic_cast_not_polymorphic : Error<"%0 is not polymorphic">;
 
 // Other C++ expressions
+// Mirror
+def err_need_header_before_reflexpr : Error<
+  "you need to include <reflexpr> before using the 'reflexpr' operator">;
 def err_need_header_before_typeid : Error<
   "you need to include <typeinfo> before using the 'typeid' operator">;
 def err_need_header_before_ms_uuidof : Error<

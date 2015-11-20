@@ -763,6 +763,7 @@ ExprResult Parser::ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc ) {
 
   ExprResult Result = ExprError();
   SourceLocation StartLoc = Tok.getLocation();
+  SourceLocation EndLoc;
 
   if (Tok.is(tok::annot_reflexpr)) {
     Result = getExprAnnotation(Tok);
@@ -776,58 +777,67 @@ ExprResult Parser::ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc ) {
     if (Tok.getIdentifierInfo()->isStr("reflexpr"))
       Diag(Tok, diag::warn_cxx_compat_reflexpr);
 
-    ConsumeToken();
+    ConsumeToken(); // reflexpr
 
-    // Parse the expression
-    EnterExpressionEvaluationContext Unevaluated(Actions, Sema::Unevaluated,
-                                                 nullptr,
-                                                 /*IsDecltype=*/false,
-                                                 /*IsReflexpr=*/true);
-    bool isCastExpr = false;
-    ParsedType ExprTy;
-    SourceRange ExprRange;
-    Result = Actions.CorrectDelayedTyposInExpr(
-         ParseExprAfterReflexpr(OpTok, isCastExpr, ExprTy, ExprRange),
-         [](Expr *E) {
-           return E->hasPlaceholderType() ? ExprError() : E;
-    });
-
-    if (Result.isInvalid()) {
-
-      DS.SetTypeSpecError();
-      if (SkipUntil(tok::r_paren, StopAtSemi | StopBeforeMatch)) {
-        if(Loc) *Loc = ConsumeParen();
-      } else {
-        if (PP.isBacktrackEnabled() && Tok.is(tok::semi)) {
-          // Backtrack to get the location of the last token before the semi.
-          PP.RevertCachedTokens(2);
-          ConsumeToken(); // the semi.
-          if(Loc) *Loc = ConsumeAnyToken();
-          assert(Tok.is(tok::semi));
-        } else {
-          if(Loc) *Loc = Tok.getLocation();
-        }
-      }
-      return Result;
-    }
-
-    if(Result.isUnset()) {
-      Result = Actions.ActOnReflexprExpression(Tok.getLocation(),
-                                               ExprRange,
-                                               ExprTy);
+    // Try to parse the global scope reflection expression '()' or '(::)'
+    if(ParseGlobalScopeParenExpression(&EndLoc)) {
+    
+      if(Loc) { *Loc = EndLoc; }
+      SourceRange ExprR(StartLoc, EndLoc);
+      Result = Actions.ActOnReflexprExpression(OpTok.getLocation(), ExprR);
     } else {
-      Result = Actions.ActOnReflexprExpression(Result.get());
+
+      // Parse the expression
+      EnterExpressionEvaluationContext Unevaluated(Actions, Sema::Unevaluated,
+                                                   nullptr,
+                                                   /*IsDecltype=*/false,
+                                                   /*IsReflexpr=*/true);
+      bool isCastExpr = false;
+      ParsedType ExprTy;
+      SourceRange ExprRange;
+      Result = Actions.CorrectDelayedTyposInExpr(
+           ParseExprAfterReflexpr(OpTok, isCastExpr, ExprTy, ExprRange),
+           [](Expr *E) {
+             return E->hasPlaceholderType() ? ExprError() : E;
+      });
+
+      if (Result.isInvalid()) {
+
+        DS.SetTypeSpecError();
+        if (SkipUntil(tok::r_paren, StopAtSemi | StopBeforeMatch)) {
+          if(Loc) *Loc = ConsumeParen();
+        } else {
+          if (PP.isBacktrackEnabled() && Tok.is(tok::semi)) {
+            // Backtrack to get the location of the last token before the semi.
+            PP.RevertCachedTokens(2);
+            ConsumeToken(); // the semi.
+            if(Loc) *Loc = ConsumeAnyToken();
+            assert(Tok.is(tok::semi));
+          } else {
+            if(Loc) *Loc = Tok.getLocation();
+          }
+        }
+        return Result;
+      }
+
+      if(Result.isUnset()) {
+        Result = Actions.ActOnReflexprExpression(Tok.getLocation(),
+                                                 ExprRange,
+                                                 ExprTy);
+      } else {
+        Result = Actions.ActOnReflexprExpression(Result.get());
+      }
+
+      if (Result.isInvalid()) {
+        DS.SetTypeSpecError();
+        if(Loc) *Loc = ExprRange.getEnd();
+        return Result;
     }
 
-    if (Result.isInvalid()) {
-      DS.SetTypeSpecError();
       if(Loc) *Loc = ExprRange.getEnd();
-      return Result;
     }
-
-    if(Loc) *Loc = ExprRange.getEnd();
+    assert(!Result.isInvalid());
   }
-  assert(!Result.isInvalid());
 
   const char *PrevSpec = nullptr;
   unsigned DiagID;
@@ -1381,6 +1391,7 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
                   tok::kw___is_array,
                   tok::kw___is_base_of,
                   tok::kw___is_class,
+                  tok::kw___is_metaobject, // Mirror
                   tok::kw___is_complete_type,
                   tok::kw___is_compound,
                   tok::kw___is_const,

@@ -1428,6 +1428,7 @@ public:
 
   QualType BuildTypeofExprType(Expr *E, SourceLocation Loc);
 
+  // Mirror
   QualType BuildReflexprType(Expr *E, SourceLocation Loc);
 
   /// If AsUnevaluated is false, E is treated as though it were an evaluated
@@ -4849,10 +4850,18 @@ public:
                                        SourceLocation OpLoc,
                                        SourceRange R);
 
+  ExprResult CreateReflexprOperandExpr(SourceLocation OpLoc,
+                                       SourceRange R);
+
   ExprResult CreateReflexprOperandExpr(Expr* E,
                                        SourceLocation OpLoc,
                                        SourceRange R);
   // Mirror
+  bool isReflexprHeaderIncluded(SourceLocation);
+
+  ExprResult ActOnReflexprExpression(SourceLocation OpLoc,
+                                     SourceRange ArgRange);
+
   ExprResult ActOnReflexprExpression(SourceLocation OpLoc,
                                      SourceRange ArgRange,
                                      ParsedType& ExprTy);

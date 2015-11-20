@@ -1347,6 +1347,33 @@ IdentifierInfo *OffsetOfExpr::OffsetOfNode::getFieldName() const {
 }
 
 // Mirror
+ReflexprOperandExpr::ReflexprOperandExpr(TypeSourceInfo *TInfo,
+    QualType argType, SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprOperandExprClass, argType, VK_RValue, OK_Ordinary,
+         false, // Never type-dependent (C++ [temp.dep.expr]p3).
+         // Value-dependent if the argument is type-dependent.
+         TInfo->getType()->isDependentType(),
+         TInfo->getType()->isInstantiationDependentType(),
+         TInfo->getType()->containsUnexpandedParameterPack()),
+    OpLoc(op), RParenLoc(rp) {
+  ReflexprOperandExprBits.IsType = true;
+  Argument.Ty = TInfo;
+}          
+// Mirror
+
+// Mirror
+ReflexprOperandExpr::ReflexprOperandExpr(SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprOperandExprClass, QualType(), VK_RValue, OK_Ordinary,
+           false,
+           false, false,
+           false),
+      OpLoc(op), RParenLoc(rp) {
+  ReflexprOperandExprBits.IsType = false;
+  Argument.Ex = nullptr;
+}
+// Mirror
+
+// Mirror
 ReflexprOperandExpr::ReflexprOperandExpr(
     Expr *E, QualType resultType,
     SourceLocation op, SourceLocation rp)

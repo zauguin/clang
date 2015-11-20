@@ -355,6 +355,16 @@ const Type *Type::getUnqualifiedDesugaredType() const {
     }
   }
 }
+// Mirror
+bool Type::isMetaobjectType() const {
+  if (const RecordType *RT = getAs<RecordType>()) {
+    if(const CXXRecordDecl* RD = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
+      return RD->isMetaobject();
+    }
+  }
+  return false;
+}
+// Mirror
 bool Type::isClassType() const {
   if (const RecordType *RT = getAs<RecordType>())
     return RT->getDecl()->isClass();
@@ -2882,26 +2892,30 @@ void DependentTypeOfExprType::Profile(llvm::FoldingSetNodeID &ID,
 }
 
 // Mirror
-ReflexprType::ReflexprType(Expr *e, QualType underlyingType, QualType can)
-  : Type(Reflexpr, can, e->isInstantiationDependent(),
+ReflexprType::ReflexprType(Expr *e,
+                           QualType reflectingType,
+                           QualType reflectedType)
+  : Type(Reflexpr, reflectingType, e->isInstantiationDependent(),
          e->isInstantiationDependent(),
-         e->getType()->isVariablyModifiedType(),
+         false, // ! isVariablyModified
          e->containsUnexpandedParameterPack()),
     E(e),
-  UnderlyingType(underlyingType) {
+  ReflectingType(reflectingType),
+  ReflectedType(reflectedType) {
 }
 
 bool ReflexprType::isSugared() const { return !E->isInstantiationDependent(); }
 
 QualType ReflexprType::desugar() const {
   if (isSugared())
-    return getUnderlyingType();
+    return getReflectingType();
   
   return QualType(this, 0);
 }
 
 DependentReflexprType::DependentReflexprType(const ASTContext &Context, Expr *E)
-  : ReflexprType(E, Context.DependentTy), Context(Context) { }
+  : ReflexprType(E, Context.DependentTy, Context.DependentTy)
+  , Context(Context) { }
 
 void DependentReflexprType::Profile(llvm::FoldingSetNodeID &ID,
                                     const ASTContext &Context, Expr *E) {

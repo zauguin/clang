@@ -1,11 +1,6 @@
-namespace foo {
-
-struct bar { };
-
-} // namespace foo
+#include "reflexpr_base.hpp"
 
 int main(void)
 {
-	reflexpr(foo::bar) x;
-	return sizeof(x);
+	return sizeof(reflexpr(int)::_has_scope);
 }

@@ -2086,7 +2086,7 @@ static QualType UnwrapTypeForDebugInfo(QualType T, const ASTContext &C) {
       break;
     // Mirror
     case Type::Reflexpr:
-      T = cast<ReflexprType>(T)->getUnderlyingType();
+      T = cast<ReflexprType>(T)->getReflectedType();
       break;
     case Type::Decltype:
       T = cast<DecltypeType>(T)->getUnderlyingType();

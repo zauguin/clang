@@ -3916,12 +3916,522 @@ QualType ASTContext::getTypeOfType(QualType tofType) const {
   return QualType(tot, 0);
 }
 
+// Mirror
+void ASTContext::addMetaobjectTypedef(CXXRecordDecl* mo_decl,
+                                     const StringRef& identifier,
+                                     QualType td_type,
+                                     SourceLocation loc) {
+
+  TypedefDecl* mo_typedef_decl = TypedefDecl::Create(*this, mo_decl,
+                                      loc, loc,
+                                      &Idents.get(identifier),
+                                      getTrivialTypeSourceInfo(td_type));
+
+  mo_typedef_decl->setAccess(AS_public);
+  mo_decl->addDecl(mo_typedef_decl);
+}
+// Mirror
 
 
-// Mirror TODO
-QualType ASTContext::getReflexprType(Expr *e, QualType UnderlyingType) const {
-  ReflexprType *dt;
+// Mirror
+void ASTContext::addMetaobjectCTString(CXXRecordDecl* mo_decl,
+                                       const StringRef& identifier,
+                                       const StringRef& value,
+                                       SourceLocation loc) {
+  // nested struct <identifier> { ... };
+  CXXRecordDecl* mo_ctstr_decl = CXXRecordDecl::Create(*this, TTK_Struct,
+                                      mo_decl,
+                                      loc, loc,
+                                      &Idents.get(identifier));
+  assert(mo_ctstr_decl != nullptr);
 
+  mo_ctstr_decl->setAccess(AS_public);
+  mo_decl->addDecl(mo_ctstr_decl);
+
+  mo_ctstr_decl->startDefinition();
+
+
+  QualType mo_ctstr_str_type = getConstantArrayType(
+                                        getConstType(CharTy),
+                                        llvm::APInt(32, value.size()+1),
+                                        ArrayType::Normal, 0);
+
+  VarDecl* mo_ctstr_str_decl = VarDecl::Create(*this, mo_ctstr_decl,
+                                      loc, loc,
+                                      &Idents.get("_str"),
+                                      mo_ctstr_str_type,
+                                      getTrivialTypeSourceInfo(CharTy),
+                                      SC_Static);
+
+  mo_ctstr_str_decl->setAccess(AS_public);
+  mo_ctstr_str_decl->setConstexpr(true);
+
+  Expr* mo_ctstr_str_init = StringLiteral::Create(*this, value,
+                                      StringLiteral::UTF8, false,
+                                      mo_ctstr_str_type,
+                                      &loc, 1);
+
+  mo_ctstr_str_decl->setInit(mo_ctstr_str_init);
+  mo_ctstr_decl->addDecl(mo_ctstr_str_decl);
+  mo_ctstr_decl->completeDefinition();
+
+}
+// Mirror
+void ASTContext::addMetaobjectCTString(CXXRecordDecl* mo_decl,
+                                       const StringRef& identifier,
+                                       const IdentifierInfo* value,
+                                       SourceLocation loc) {
+
+  assert(value != nullptr);
+
+  addMetaobjectCTString(mo_decl, identifier, value->getName(), loc);
+}
+
+// Mirror
+void ASTContext::addMetaobjectUIntTrait(CXXRecordDecl* mo_decl,
+                                        const StringRef& identifier,
+                                        unsigned value,
+                                        SourceLocation loc) {
+
+  VarDecl* mo_trait_decl = VarDecl::Create(*this, mo_decl,
+                                      loc, loc,
+                                      &Idents.get(identifier),
+                                      getConstType(UnsignedIntTy),
+                                      getTrivialTypeSourceInfo(UnsignedIntTy),
+                                      SC_Static);
+
+  mo_trait_decl->setAccess(AS_public);
+  mo_trait_decl->setConstexpr(true);
+
+  llvm::APInt mo_trait_val(getTargetInfo().getIntWidth(), value);
+
+  Expr* mo_trait_init = IntegerLiteral::Create(*this, mo_trait_val,
+                                               UnsignedIntTy, loc);
+
+  mo_trait_decl->setInit(mo_trait_init);
+  mo_decl->addDecl(mo_trait_decl);
+}
+// Mirror
+
+// Mirror
+void ASTContext::addMetaobjectBoolTrait(CXXRecordDecl* mo_decl,
+                                        const StringRef& identifier,
+                                        bool value,
+                                        SourceLocation loc) {
+
+  VarDecl* mo_trait_decl = VarDecl::Create(*this, mo_decl,
+                                      loc, loc,
+                                      &Idents.get(identifier),
+                                      getConstType(BoolTy),
+                                      getTrivialTypeSourceInfo(BoolTy),
+                                      SC_Static);
+
+  mo_trait_decl->setAccess(AS_public);
+  mo_trait_decl->setConstexpr(true);
+
+  Expr* mo_trait_init = new(*this) CXXBoolLiteralExpr(value, BoolTy, loc);
+
+  mo_trait_decl->setInit(mo_trait_init);
+  mo_decl->addDecl(mo_trait_decl);
+}
+// Mirror
+
+// Mirror
+void ASTContext::addMetaobjectSourceInfo(CXXRecordDecl* mo_decl,
+                                         const Decl* ro_decl,
+                                         SourceLocation loc) {
+  // static constexpr const char _src_line::value [N+1] = <Loc.File>
+  StringRef mo_src_file_s = "";
+
+  if(ro_decl) {
+    mo_src_file_s = getSourceManager()
+      .getFilename(ro_decl->getLocation());
+  }
+
+  // nested struct _src_file { ... };
+  addMetaobjectCTString(mo_decl, "_src_file", mo_src_file_s, loc);
+
+  // line number / column number
+  unsigned mo_src_line = 0u; // unknown/no line
+  unsigned mo_src_col = 0u; // unknown/no column
+
+  if(ro_decl) {
+    mo_src_line = getSourceManager()
+      .getPresumedLineNumber(ro_decl->getLocation());
+    mo_src_col = getSourceManager()
+      .getPresumedColumnNumber(ro_decl->getLocation());
+  }
+
+  // static constexpr const int _src_line = <Loc.Line>
+  addMetaobjectUIntTrait(mo_decl, "_src_line", mo_src_line, loc); 
+
+  // static constexpr const int _src_column = <Loc.Column>
+  addMetaobjectUIntTrait(mo_decl, "_src_column", mo_src_col, loc); 
+}
+// Mirror
+
+void ASTContext::addMetaobjectBase(CXXRecordDecl* mo_decl,
+                                   const StringRef& mo_base_name,
+                                   SourceLocation loc) {
+  // the base metaobject
+  DeclContextLookupResult base_mo_lr =
+    getTranslationUnitDecl()->lookup(&Idents.get(mo_base_name));
+  assert(!base_mo_lr.empty() &&
+         "'__reflexpr_metaobject' must be defined if using reflexpr");
+
+  CXXRecordDecl* base_mo_decl = dyn_cast<CXXRecordDecl>(base_mo_lr.front());
+
+  // wrapped base metaobject type decl
+  QualType base_mo_type(base_mo_decl->getTypeForDecl(), 0);
+
+  // inherit from base metaobject
+  CXXBaseSpecifier* basespec = new(*this)
+    CXXBaseSpecifier(SourceRange(),
+                     false,
+                     false,
+                     AS_public,
+                     getTrivialTypeSourceInfo(base_mo_type),
+                     loc);
+
+  mo_decl->setBases(&basespec, 1);
+
+  Deallocate(basespec);
+  base_mo_decl->setReferenced();
+
+}
+
+// Mirror
+void ASTContext::addMetaobjectInjectDecl(CXXRecordDecl* mo_decl,
+                                         IdentifierInfo& mo_ident,
+                                         SourceLocation loc) {
+
+  // injected record decl
+  CXXRecordDecl* inj_decl = CXXRecordDecl::Create(*this, TTK_Struct,
+                                                  mo_decl,
+                                                  loc, loc,
+                                                  &mo_ident,
+                                                  nullptr, true);
+  assert(inj_decl != nullptr);
+  getTypeDeclType(inj_decl, mo_decl);
+  inj_decl->setImplicit();
+  inj_decl->setAccess(AS_public);
+  mo_decl->addDecl(inj_decl);
+
+}
+
+// Mirror
+std::string ASTContext::makeMetaNamespaceName(const NamespaceDecl* ns_decl) {
+
+  std::string result("__reflexpr_mnsp");
+
+  std::hash<std::string> hshf;
+
+  result.append(std::to_string(hshf(ns_decl->getQualifiedNameAsString())));
+
+  return result;
+
+}
+
+// Mirror
+std::string ASTContext::makeMetaTypeName(QualType rt) {
+
+  std::string result("__reflexpr_mtyp");
+
+  std::hash<std::string> hshf;
+
+  std::size_t hshv = hshf(rt.getAsString());
+
+  const NamedDecl* rt_decl = nullptr;
+  if(const TypedefType* rt_tdt = dyn_cast<TypedefType>(rt)) {
+    rt_decl = rt_tdt->getDecl();
+  } else if (const TagType* rt_tt = dyn_cast<TagType>(rt)) {
+    rt_decl = rt_tt->getDecl();
+  } else if (const SubstTemplateTypeParmType* rt_sttpt =
+    dyn_cast<SubstTemplateTypeParmType>(rt)) {
+    rt_decl = rt_sttpt->getReplacedParameter()->getDecl();
+  } else if (const TemplateTypeParmType* rt_ttpt =
+    dyn_cast<TemplateTypeParmType>(rt)) {
+    rt_decl = rt_ttpt->getDecl();
+  }
+
+  if(rt_decl != nullptr) {
+    hshv ^= hshf(rt_decl->getName()) << 1;
+    if(const DeclContext* scope_dc = rt_decl->getDeclContext()) {
+      if (const NamedDecl* rts_decl = dyn_cast<NamedDecl>(scope_dc)) {
+        hshv ^= hshf(rts_decl->getName()) << 1;
+      }
+    }
+  }
+
+  result.append(std::to_string(hshv));
+
+  return result;
+}
+
+// Mirror
+CXXRecordDecl* ASTContext::lookupPrevMetaobjectDecl(IdentifierInfo& mo_ident) {
+
+  DeclContextLookupResult mo_lr = getTranslationUnitDecl()->lookup(&mo_ident);
+
+  CXXRecordDecl* mo_decl = nullptr;
+  if(!mo_lr.empty()) {
+    mo_decl  = dyn_cast<CXXRecordDecl>(mo_lr.front());
+    assert(mo_decl != nullptr && "metaobject must be a CXXRecordDecl");
+  }
+  return mo_decl;
+}
+
+// Mirror
+CXXRecordDecl* ASTContext::createNewMetaobjectDecl(IdentifierInfo& mo_ident,
+                                                   SourceLocation loc) {
+
+  TranslationUnitDecl* tudecl = getTranslationUnitDecl();
+  assert(tudecl != nullptr);
+  // The declaration of the metaobject record
+  CXXRecordDecl* mo_decl = CXXRecordDecl::Create(*this, TTK_Struct, tudecl,
+                                                 loc, loc,
+                                                 &mo_ident);
+  assert(mo_decl != nullptr);
+  tudecl->addDecl(mo_decl);
+
+  NestedNameSpecifierLocBuilder mo_nnslb;
+  mo_nnslb.Extend(*this, &mo_ident, loc, loc);
+
+  mo_decl->startDefinition();
+
+  return mo_decl;
+}
+
+// Mirror
+QualType ASTContext::finalizeMetaobject(CXXRecordDecl* mo_decl) {
+
+  // finalize the metaobject record
+  mo_decl->completeDefinition();
+  mo_decl->setReferenced();
+  mo_decl->setIsMetaobject();
+
+  return QualType(new(*this, TypeAlignment) RecordType(mo_decl), 0);
+}
+
+// Mirror
+// This must be kept in sync with tag definitions in reflexpr_base.hpp
+static constexpr const unsigned reflexprTypeTag         = 0x00000010;
+static constexpr const unsigned reflexprClassTag        = 0x00000030;
+static constexpr const unsigned reflexprEnumTag         = 0x00000050;
+// Mirror
+
+// Mirror
+QualType ASTContext::getMetaGlobalScope(void) {
+
+  // metaobject name
+  IdentifierInfo& mo_ident = Idents.get("__reflexpr_meta_global_scope");
+
+  // try to find any previous declarations of this metaobject
+  CXXRecordDecl* mo_decl = lookupPrevMetaobjectDecl(mo_ident);
+  if(mo_decl != nullptr) {
+    return QualType(mo_decl->getTypeForDecl(), 0);
+  }
+  // Invalid source location since the metaobject is generated
+  SourceLocation loc;
+  // The declaration of the metaobject record
+  mo_decl = createNewMetaobjectDecl(mo_ident, loc);
+
+  // inherit from base metaobject
+  addMetaobjectBase(mo_decl, "__reflexpr_meta_g_s_base", loc);
+
+  // injected record decl
+  addMetaobjectInjectDecl(mo_decl, mo_ident, loc);
+
+  // finalize the metaobject record
+  return finalizeMetaobject(mo_decl);
+}
+// Mirror
+
+// Mirror
+QualType ASTContext::getMetaNamespace(const NamespaceDecl* ns_decl) {
+
+  assert(ns_decl != nullptr);
+
+  // metaobject name
+  IdentifierInfo& mo_ident = Idents.get(makeMetaNamespaceName(ns_decl));
+
+  // try to find any previous declarations of this metaobject
+  CXXRecordDecl* mo_decl = lookupPrevMetaobjectDecl(mo_ident);
+  if(mo_decl != nullptr) {
+    return QualType(mo_decl->getTypeForDecl(), 0);
+  }
+  // Invalid source location since the metaobject is generated
+  SourceLocation loc;
+  // The declaration of the metaobject record
+  mo_decl = createNewMetaobjectDecl(mo_ident, loc);
+
+  // inherit from base metaobject
+  addMetaobjectBase(mo_decl, "__reflexpr_meta_ns_base", loc);
+
+  // injected record decl
+  addMetaobjectInjectDecl(mo_decl, mo_ident, loc);
+
+  // add source file, line column, etc.
+  addMetaobjectSourceInfo(mo_decl, ns_decl, loc);
+
+  // name
+  addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
+  addMetaobjectCTString(mo_decl, "_base_name", ns_decl->getName(), loc);
+
+  // finalize the metaobject record
+  return finalizeMetaobject(mo_decl);
+}
+// Mirror
+ 
+// Mirror
+QualType ASTContext::getMetaType(QualType ReflectedType) {
+
+  // TODO: check for name clashes
+  // metaobject name
+  std::string mo_name = makeMetaTypeName(ReflectedType);
+
+  IdentifierInfo& mo_ident = Idents.get(mo_name);
+
+  // try to find any previous declarations of this metaobject
+  CXXRecordDecl* mo_decl = lookupPrevMetaobjectDecl(mo_ident);
+  if(mo_decl != nullptr) {
+    return QualType(mo_decl->getTypeForDecl(), 0);
+  }
+
+  // At least a type
+  unsigned mo_category = reflexprTypeTag;
+
+  QualType rt = ReflectedType;
+  QualType rt_tdt; // typedef type (if any)
+
+  // TODO: This is just for debugging it can be removed later
+  Type::TypeClass tc = rt->getTypeClass();
+  (void)tc;
+
+  if(const ElaboratedType* et = dyn_cast<ElaboratedType>(rt)) {
+    rt = et->getNamedType();
+  }
+
+  // try to find the declaration of the reflected type
+  const Decl* rt_decl = nullptr;
+  if(const TypedefType* rt_bt = dyn_cast<TypedefType>(rt)) {
+    rt_decl = rt_bt->getDecl();
+    rt_tdt = getMetaType(rt_bt->desugar());
+  } else if (const TagType* rt_tt = dyn_cast<TagType>(rt)) {
+    rt_decl = rt_tt->getDecl();
+  } else if (const SubstTemplateTypeParmType* rt_sttpt =
+    dyn_cast<SubstTemplateTypeParmType>(rt)) {
+    rt_decl = rt_sttpt->getReplacedParameter()->getDecl();
+    rt_tdt = getMetaType(rt_sttpt->getReplacementType());
+  } else if (const TemplateTypeParmType* rt_ttpt =
+    dyn_cast<TemplateTypeParmType>(rt)) {
+    rt_decl = rt_ttpt->getDecl();
+  }
+
+
+  // Invalid source location since the metaobject is generated
+  SourceLocation loc;
+  // The declaration of the metaobject record
+  mo_decl = createNewMetaobjectDecl(mo_ident, loc);
+
+  // inherit from base metaobject
+  addMetaobjectBase(mo_decl, "__reflexpr_metaobject", loc);
+
+  // injected record decl
+  addMetaobjectInjectDecl(mo_decl, mo_ident, loc);
+
+  // add source file, line column, etc.
+  addMetaobjectSourceInfo(mo_decl, rt_decl, loc);
+
+
+  // scope and name
+  if(rt_decl) {
+    if(const CXXRecordDecl* rt_rd = dyn_cast<CXXRecordDecl>(rt_decl)) {
+      (void)rt_rd;
+      mo_category = reflexprClassTag;
+      addMetaobjectBoolTrait(mo_decl, "_is_scope", true, loc);
+      // TODO: members
+    }
+
+    bool mo_has_scope_v = false;
+    if(const DeclContext* scope_dc = rt_decl->getDeclContext()) {
+      if (const NamespaceDecl* sns_d = dyn_cast<NamespaceDecl>(scope_dc)) {
+        mo_has_scope_v = true;
+        addMetaobjectTypedef(mo_decl, "_scope", getMetaNamespace(sns_d), loc);
+      } else if(const CXXRecordDecl* sr_d = dyn_cast<CXXRecordDecl>(scope_dc)) {
+        if(const Type* sr_t = sr_d->getTypeForDecl()) {
+          QualType sr_qt(sr_t, 0);
+          mo_has_scope_v = true;
+          addMetaobjectTypedef(mo_decl, "_scope", getMetaType(sr_qt), loc);
+        }
+      } else if(scope_dc->isTranslationUnit()) {
+        mo_has_scope_v = true;
+        addMetaobjectTypedef(mo_decl, "_scope", getMetaGlobalScope(), loc);
+      }
+    }
+
+    if(mo_has_scope_v) {
+      addMetaobjectBoolTrait(mo_decl, "_has_scope", mo_has_scope_v, loc);
+    }
+
+    if(const NamedDecl* ro_nd = dyn_cast<NamedDecl>(rt_decl)) {
+      addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
+      addMetaobjectCTString(mo_decl, "_base_name", ro_nd->getName(), loc);
+
+    }
+  } else if (const BuiltinType* rt_bt = dyn_cast<BuiltinType>(rt)) {
+
+    addMetaobjectBoolTrait(mo_decl, "_has_scope", true, loc);
+    addMetaobjectTypedef(mo_decl, "_scope", getMetaGlobalScope(), loc);
+
+    addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
+    addMetaobjectCTString(mo_decl,
+                          "_base_name",
+                          rt_bt->getName(getPrintingPolicy()),
+                          loc);
+  } else if (ReflectedType.getBaseTypeIdentifier()) {
+
+    addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
+    addMetaobjectCTString(mo_decl,
+                          "_base_name",
+                          ReflectedType.getBaseTypeIdentifier(),
+                          loc);
+  }
+
+  // typedef _orig_type
+  addMetaobjectTypedef(mo_decl, "_orig_type", ReflectedType, loc);
+
+  // typedef _aliased
+  if(!rt_tdt.isNull()) {
+    addMetaobjectBoolTrait(mo_decl, "_is_alias", true, loc);
+    addMetaobjectTypedef(mo_decl, "_aliased", rt_tdt, loc);
+  }
+
+  // the category
+  addMetaobjectUIntTrait(mo_decl, "_cat_bits", mo_category, loc);
+
+  // finalize the metaobject record
+  return finalizeMetaobject(mo_decl);
+}
+
+QualType ASTContext::getMetaobject(Expr *e, QualType ReflectedType) {
+  if(e != nullptr) {
+    if(const ReflexprOperandExpr* REOE = dyn_cast<ReflexprOperandExpr>(e)) {
+      if(REOE->isEmpty()) {
+        return getMetaGlobalScope();
+      }
+    }
+  }
+  assert(!ReflectedType.isNull());
+
+  return getMetaType(ReflectedType);
+
+}
+
+// Mirror
+QualType ASTContext::getReflexprType(Expr *e, QualType ReflectedType) {
+
+/* Mirror TODO: throw this out ? 
   if (e->isInstantiationDependent()) {
     llvm::FoldingSetNodeID ID;
     DependentReflexprType::Profile(ID, *this, e);
@@ -3935,13 +4445,21 @@ QualType ASTContext::getReflexprType(Expr *e, QualType UnderlyingType) const {
       DependentReflexprTypes.InsertNode(Canon, InsertPos);
     }
     dt = new (*this, TypeAlignment)
-        ReflexprType(e, UnderlyingType, QualType((ReflexprType *)Canon, 0));
+        ReflexprType(e, getMetaType(e, ReflectedType), ReflectedType);
   } else {
-    dt = new (*this, TypeAlignment)
-        ReflexprType(e, UnderlyingType, getCanonicalType(UnderlyingType));
+*/
+  // TODO reuse previous reflexpr types ?
+  ReflexprType* rt = nullptr;
+  if (e->isInstantiationDependent()) {
+    rt = new (*this, TypeAlignment)
+          DependentReflexprType(*this, e);
+  } else {
+    rt = new (*this, TypeAlignment)
+          ReflexprType(e, getMetaobject(e, ReflectedType), ReflectedType);
   }
-  Types.push_back(dt);
-  return QualType(dt, 0);
+
+  Types.push_back(rt);
+  return QualType(rt, 0);
 }
 // Mirror
 

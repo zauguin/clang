@@ -70,7 +70,9 @@ CXXRecordDecl::DefinitionData::DefinitionData(CXXRecordDecl *D)
     ImplicitCopyAssignmentHasConstParam(true),
     HasDeclaredCopyConstructorWithConstParam(false),
     HasDeclaredCopyAssignmentWithConstParam(false),
-    IsLambda(false), IsParsingBaseSpecifiers(false), NumBases(0), NumVBases(0),
+    IsLambda(false),
+    IsMetaobject(false),
+    IsParsingBaseSpecifiers(false), NumBases(0), NumVBases(0),
     Bases(), VBases(),
     Definition(D), FirstFriend() {
 }

@@ -659,6 +659,7 @@ class CastExpressionIdValidator : public CorrectionCandidateCallback {
 ///                   '__is_sealed'                           [MS]
 ///                   '__is_trivial'
 ///                   '__is_union'
+///                   '__is_metaobject' // Mirror
 ///
 /// [Clang] unary-type-trait:
 ///                   '__trivially_copyable'
@@ -795,6 +796,7 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
           REVERTIBLE_TYPE_TRAIT(__is_array);
           REVERTIBLE_TYPE_TRAIT(__is_base_of);
           REVERTIBLE_TYPE_TRAIT(__is_class);
+          REVERTIBLE_TYPE_TRAIT(__is_metaobject); // Mirror
           REVERTIBLE_TYPE_TRAIT(__is_complete_type);
           REVERTIBLE_TYPE_TRAIT(__is_compound);
           REVERTIBLE_TYPE_TRAIT(__is_const);
@@ -2444,6 +2446,32 @@ Parser::ParseParenExpression(ParenParseOption &ExprType, bool stopIfCastExpr,
   RParenLoc = T.getCloseLocation();
   return Result;
 }
+
+// Mirror
+bool Parser::ParseGlobalScopeParenExpression(SourceLocation *RParenLoc) {
+  assert(Tok.is(tok::l_paren) && "Not a paren expr!");
+
+  TentativeParsingAction tpa(*this);
+  ConsumeParen(); // '('
+
+  if(Tok.is(tok::coloncolon)) {
+      ConsumeToken(); // '::'
+  }
+  
+  if(!Tok.is(tok::r_paren)) {
+    tpa.Revert();
+    return false;
+  } 
+  tpa.Commit();
+  if(RParenLoc) {
+    *RParenLoc = ConsumeParen(); // ')'
+  } else {
+    ConsumeParen(); // ')'
+  }
+  return true;
+}
+// Mirror
+
 
 /// ParseCompoundLiteralExpression - We have parsed the parenthesized type-name
 /// and we are at the left brace.

@@ -1463,6 +1463,10 @@ private:
                                         ParsedType &CastTy,
                                         SourceLocation &RParenLoc);
 
+  // Mirror
+  bool ParseGlobalScopeParenExpression(SourceLocation *RParenLoc);
+  // Mirror
+
   ExprResult ParseCXXAmbiguousParenExpression(
       ParenParseOption &ExprType, ParsedType &CastTy,
       BalancedDelimiterTracker &Tracker, ColonProtectionRAIIObject &ColonProt);

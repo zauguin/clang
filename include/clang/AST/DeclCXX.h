@@ -462,6 +462,11 @@ class CXXRecordDecl : public RecordDecl {
     /// \brief Whether this class describes a C++ lambda.
     bool IsLambda : 1;
 
+    // Mirror
+    /// \brief Whether this class describes a reflection metaobject.
+    bool IsMetaobject : 1;
+    // Mirror
+
     /// \brief Whether we are currently parsing base specifiers.
     bool IsParsingBaseSpecifiers : 1;
 
@@ -1024,6 +1029,16 @@ public:
     auto *DD = DefinitionData.getNotUpdated();
     return DD && DD->IsLambda;
   }
+
+  // Mirror
+  void setIsMetaobject() const {
+    data().IsMetaobject = true;
+  };
+
+  bool isMetaobject() const {
+    return data().IsMetaobject;
+  };
+  // Mirror
 
   /// \brief Determine whether this class describes a generic 
   /// lambda function object (i.e. function call operator is

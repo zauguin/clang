@@ -1634,6 +1634,7 @@ public:
   bool isVariableArrayType() const;
   bool isDependentSizedArrayType() const;
   bool isRecordType() const;
+  bool isMetaobjectType() const; // Mirror
   bool isClassType() const;
   bool isStructureType() const;
   bool isObjCBoxableRecordType() const;
@@ -3435,14 +3436,18 @@ public:
 // Mirror `reflexpr(expr)`
 class ReflexprType : public Type {
   Expr *E;
-  QualType UnderlyingType;
+  QualType ReflectingType;
+  QualType ReflectedType;
 
 protected:
-  ReflexprType(Expr *E, QualType underlyingType, QualType can = QualType());
+  ReflexprType(Expr *E,
+               QualType reflectingType,
+               QualType reflectedType);
   friend class ASTContext;  // ASTContext creates these.
 public:
   Expr *getUnderlyingExpr() const { return E; }
-  QualType getUnderlyingType() const { return UnderlyingType; }
+  QualType getReflectedType() const { return ReflectedType; }
+  QualType getReflectingType() const { return ReflectingType; }
 
   /// \brief Remove a single level of sugar.
   QualType desugar() const;

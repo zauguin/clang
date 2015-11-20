@@ -5057,14 +5057,14 @@ QualType TreeTransform<Derived>::TransformReflexprType(TypeLocBuilder &TLB,
   if (E.isInvalid())
     return QualType();
 
-  E = getSema().ActOnDecltypeExpression(E.get());
+  E = getSema().ActOnReflexprExpression(E.get());
   if (E.isInvalid())
     return QualType();
 
   QualType Result = TL.getType();
   if (getDerived().AlwaysRebuild() ||
       E.get() != T->getUnderlyingExpr()) {
-    Result = getDerived().RebuildDecltypeType(E.get(), TL.getNameLoc());
+    Result = getDerived().RebuildReflexprType(E.get(), TL.getNameLoc());
     if (Result.isNull())
       return QualType();
   }

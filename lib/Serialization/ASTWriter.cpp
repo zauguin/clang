@@ -266,7 +266,7 @@ void ASTTypeWriter::VisitTypeOfType(const TypeOfType *T) {
 }
 
 void ASTTypeWriter::VisitReflexprType(const ReflexprType *T) {
-  Writer.AddTypeRef(T->getUnderlyingType(), Record);
+  Writer.AddTypeRef(T->getReflectedType(), Record);
   Writer.AddStmt(T->getUnderlyingExpr());
   Code = TYPE_REFLEXPR;
 }
@@ -5463,6 +5463,7 @@ void ASTWriter::FlushCXXCtorInitializers() {
 void ASTWriter::AddCXXDefinitionData(const CXXRecordDecl *D, RecordDataImpl &Record) {
   auto &Data = D->data();
   Record.push_back(Data.IsLambda);
+  Record.push_back(Data.IsMetaobject);
   Record.push_back(Data.UserDeclaredConstructor);
   Record.push_back(Data.UserDeclaredSpecialMembers);
   Record.push_back(Data.Aggregate);

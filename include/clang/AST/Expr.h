@@ -1995,17 +1995,9 @@ class ReflexprOperandExpr : public Expr {
 public:
   ReflexprOperandExpr(TypeSourceInfo *TInfo,
                       QualType argType, SourceLocation op,
-                      SourceLocation rp) :
-      Expr(ReflexprOperandExprClass, argType, VK_RValue, OK_Ordinary,
-           false, // Never type-dependent (C++ [temp.dep.expr]p3).
-           // Value-dependent if the argument is type-dependent.
-           TInfo->getType()->isDependentType(),
-           TInfo->getType()->isInstantiationDependentType(),
-           TInfo->getType()->containsUnexpandedParameterPack()),
-      OpLoc(op), RParenLoc(rp) {
-    ReflexprOperandExprBits.IsType = true;
-    Argument.Ty = TInfo;
-  }
+                      SourceLocation rp);
+
+  ReflexprOperandExpr(SourceLocation op, SourceLocation rp);
 
   ReflexprOperandExpr(Expr *E,
                       QualType resultType, SourceLocation op,
@@ -2017,9 +2009,9 @@ public:
 
   bool isType() const { return ReflexprOperandExprBits.IsType; }
 
-  QualType getType() const {
-    return getTypeInfo()->getType();
-  }
+  bool isEmpty() const { return !isType() && Argument.Ex == nullptr; }
+
+  QualType getType() const { return getTypeInfo()->getType(); }
 
   TypeSourceInfo *getTypeInfo() const {
     assert(isType() && "calling getType() when arg is expr");

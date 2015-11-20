@@ -273,6 +273,7 @@ public:
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(bool, isVoidPointerType)
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(bool, isFunctionPointerType)
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(bool, isMemberFunctionPointerType)
+  LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(bool, isMetaobjectType) // Mirror
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(bool, isClassType)
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(bool, isStructureType)
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(bool, isInterfaceType)
@@ -514,7 +515,7 @@ struct CanProxyAdaptor<TypeOfType> : public CanProxyBase<TypeOfType> {
 template<>
 struct CanProxyAdaptor<ReflexprType> : public CanProxyBase<ReflexprType> {
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(Expr *, getUnderlyingExpr)
-  LLVM_CLANG_CANPROXY_TYPE_ACCESSOR(getUnderlyingType)
+  LLVM_CLANG_CANPROXY_TYPE_ACCESSOR(getReflectingType)
 };
 
 template<>
