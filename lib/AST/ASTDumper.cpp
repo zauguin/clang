@@ -349,6 +349,10 @@ namespace  {
     void VisitReflexprType(const ReflexprType *T) {
       dumpStmt(T->getUnderlyingExpr());
     }
+    // Mirror
+    void VisitReflexprElementType(const ReflexprElementType *T) {
+      dumpStmt(T->getUnderlyingExpr());
+    }
     void VisitDecltypeType(const DecltypeType *T) {
       dumpStmt(T->getUnderlyingExpr());
     }

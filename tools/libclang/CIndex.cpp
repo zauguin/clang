@@ -1678,6 +1678,14 @@ bool CursorVisitor::VisitReflexprTypeLoc(ReflexprTypeLoc TL) {
   return false;
 }
 
+// Mirror
+bool CursorVisitor::VisitReflexprElementTypeLoc(ReflexprElementTypeLoc TL) {
+  if (Expr *E = TL.getUnderlyingExpr())
+    return Visit(MakeCXCursor(E, StmtParent, TU));
+
+  return false;
+}
+
 bool CursorVisitor::VisitDecltypeTypeLoc(DecltypeTypeLoc TL) {
   if (Expr *E = TL.getUnderlyingExpr())
     return Visit(MakeCXCursor(E, StmtParent, TU));

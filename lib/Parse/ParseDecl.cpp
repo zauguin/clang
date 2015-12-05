@@ -3391,6 +3391,10 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       ParseReflexprSpecifier(DS, nullptr);
       continue;
 
+    case tok::kw___reflexpr_element: // Mirror
+      ParseReflexprElementSpecifier(DS, nullptr);
+      continue;
+
     case tok::annot_decltype:
       ParseDecltypeSpecifier(DS);
       continue;

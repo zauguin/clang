@@ -1261,6 +1261,15 @@ void StmtPrinter::VisitReflexprOperandExpr(ReflexprOperandExpr *Node){
 }
 // Mirror
 
+// Mirror TODO
+void StmtPrinter::VisitReflexprElementOperandExpr(
+       ReflexprElementOperandExpr *Node) {
+  OS << '(';
+  Node->getType().print(OS, Policy);
+  OS << ')';
+}
+// Mirror
+
 void StmtPrinter::VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *Node){
   switch(Node->getKind()) {
   case UETT_SizeOf:

@@ -110,6 +110,7 @@ class ASTContext : public RefCountedBase<ASTContext> {
     FunctionProtoTypes;
   mutable llvm::FoldingSet<DependentTypeOfExprType> DependentTypeOfExprTypes;
   mutable llvm::FoldingSet<DependentDecltypeType> DependentDecltypeTypes;
+  // Mirror TODO: throw this out ?
   mutable llvm::FoldingSet<DependentReflexprType> DependentReflexprTypes;
   mutable llvm::FoldingSet<TemplateTypeParmType> TemplateTypeParmTypes;
   mutable llvm::FoldingSet<SubstTemplateTypeParmType>
@@ -1328,12 +1329,30 @@ public:
                                SourceLocation loc);
 
   // Mirror
-  std::string makeMetaNamespaceName(const NamespaceDecl* ns_decl);
+  enum MetaobjectSequenceKind {
+    MoSK_None = 0,
+    MoSK_ClassDataMembers,
+    MoSK_EnumMembers
+  };
+  void addMetaobjectSequence(CXXRecordDecl* mo_decl,
+                             const StringRef& moseq_ident,
+                             MetaobjectSequenceKind moseq_kind,
+                             SourceLocation loc);
 
+  // Mirror
+  std::string makeMetaSpecifierName(const StringRef& spec_kw);
+  // Mirror
+  std::string makeMetaNamespaceName(const NamedDecl* ns_decl);
+  // Mirror
   std::string makeMetaTypeName(QualType type);
 
   // Mirror
   CXXRecordDecl* lookupPrevMetaobjectDecl(IdentifierInfo& mo_ident);
+
+  // Mirror
+  CXXRecordDecl* createNewMetaobjectDecl(DeclContext* decl_ctxt,
+                                         IdentifierInfo& mo_ident,
+                                         SourceLocation loc);
 
   // Mirror
   CXXRecordDecl* createNewMetaobjectDecl(IdentifierInfo& mo_ident,
@@ -1343,10 +1362,13 @@ public:
   QualType finalizeMetaobject(CXXRecordDecl* mo_decl);
 
   // Mirror
+  QualType getMetaSpecifier(const StringRef& spec_kw);
+
+  // Mirror
   QualType getMetaGlobalScope(void);
 
   // Mirror
-  QualType getMetaNamespace(const NamespaceDecl* ns_decl);
+  QualType getMetaNamespace(const NamedDecl* ns_decl);
 
   // Mirror
   QualType getMetaType(QualType ReflectedType);
@@ -1355,7 +1377,11 @@ public:
   QualType getMetaobject(Expr* e, QualType ReflectedType);
 
   // Mirror
-  QualType getReflexprType(Expr *e, QualType ReflectedType);
+  QualType getReflexprType(ReflexprOperandExpr *e);
+  QualType getReflexprType(Expr *e, QualType);
+  // Mirror
+  QualType getReflexprElementType(Expr *e);
+  QualType getReflexprElementType(Expr *e, QualType);
   // Mirror
 
   /// \brief C++11 decltype.

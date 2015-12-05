@@ -318,6 +318,7 @@ bool Declarator::isDeclarationOfFunction() const {
       return false;
 
     case TST_reflexpr: // Mirror
+    case TST_reflexprElement: // Mirror
     case TST_decltype:
     case TST_typeofExpr:
       if (Expr *E = DS.getRepAsExpr())
@@ -477,7 +478,8 @@ const char *DeclSpec::getSpecifierName(DeclSpec::TST T,
   case DeclSpec::TST_typeofType:
   case DeclSpec::TST_typeofExpr:  return "typeof";
   case DeclSpec::TST_auto:        return "auto";
-  case DeclSpec::TST_reflexpr:    return "(reflexpr)"; // Mirror
+  case DeclSpec::TST_reflexpr:            return "(reflexpr)"; // Mirror
+  case DeclSpec::TST_reflexprElement:     return "(__reflexpr_element)";
   case DeclSpec::TST_decltype:    return "(decltype)";
   case DeclSpec::TST_decltype_auto: return "decltype(auto)";
   case DeclSpec::TST_underlyingType: return "__underlying_type";

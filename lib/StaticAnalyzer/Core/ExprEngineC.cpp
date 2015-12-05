@@ -756,6 +756,15 @@ VisitReflexprOperandExpr(const ReflexprOperandExpr *Ex,
 }
 // Mirror
 
+// Mirror
+void ExprEngine::
+VisitReflexprElementOperandExpr(const ReflexprElementOperandExpr *Ex,
+                                ExplodedNode *Pred,
+                                ExplodedNodeSet &Dst) {
+  // Mirror TODO
+}
+// Mirror
+
 void ExprEngine::
 VisitUnaryExprOrTypeTraitExpr(const UnaryExprOrTypeTraitExpr *Ex,
                               ExplodedNode *Pred,

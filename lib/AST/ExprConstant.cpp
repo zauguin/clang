@@ -9040,6 +9040,9 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
   case Expr::ReflexprOperandExprClass: // Mirror
     return NoDiag();
 
+  case Expr::ReflexprElementOperandExprClass: // Mirror
+    return NoDiag();
+
   case Expr::SubstNonTypeTemplateParmExprClass:
     return
       CheckICE(cast<SubstNonTypeTemplateParmExpr>(E)->getReplacement(), Ctx);

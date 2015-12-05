@@ -1347,6 +1347,34 @@ IdentifierInfo *OffsetOfExpr::OffsetOfNode::getFieldName() const {
 }
 
 // Mirror
+ReflexprOperandExpr::ReflexprOperandExpr(SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprOperandExprClass, QualType(), VK_RValue, OK_Ordinary,
+           false,
+           false, false,
+           false),
+      OpLoc(op), RParenLoc(rp) {
+  ReflexprOperandExprBits.IsType = false;
+  ReflexprOperandExprBits.IsNamedDecl = false;
+  Argument.Ex = nullptr;
+}
+// Mirror
+
+// Mirror
+ReflexprOperandExpr::ReflexprOperandExpr(const NamedDecl* Named,
+    SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprOperandExprClass, QualType(), VK_RValue, OK_Ordinary,
+         false, // Never type-dependent (C++ [temp.dep.expr]p3).
+         false, // Not value dependent
+         false, // Not instantiation dependent
+         false), // TODO: Doesn't contain unexpanded 
+    OpLoc(op), RParenLoc(rp) {
+  ReflexprOperandExprBits.IsType = false;
+  ReflexprOperandExprBits.IsNamedDecl = true;
+  Argument.Nd = Named;
+}          
+// Mirror
+
+// Mirror
 ReflexprOperandExpr::ReflexprOperandExpr(TypeSourceInfo *TInfo,
     QualType argType, SourceLocation op, SourceLocation rp)
     : Expr(ReflexprOperandExprClass, argType, VK_RValue, OK_Ordinary,
@@ -1357,20 +1385,9 @@ ReflexprOperandExpr::ReflexprOperandExpr(TypeSourceInfo *TInfo,
          TInfo->getType()->containsUnexpandedParameterPack()),
     OpLoc(op), RParenLoc(rp) {
   ReflexprOperandExprBits.IsType = true;
+  ReflexprOperandExprBits.IsNamedDecl = false;
   Argument.Ty = TInfo;
 }          
-// Mirror
-
-// Mirror
-ReflexprOperandExpr::ReflexprOperandExpr(SourceLocation op, SourceLocation rp)
-    : Expr(ReflexprOperandExprClass, QualType(), VK_RValue, OK_Ordinary,
-           false,
-           false, false,
-           false),
-      OpLoc(op), RParenLoc(rp) {
-  ReflexprOperandExprBits.IsType = false;
-  Argument.Ex = nullptr;
-}
 // Mirror
 
 // Mirror
@@ -1384,8 +1401,23 @@ ReflexprOperandExpr::ReflexprOperandExpr(
            E->containsUnexpandedParameterPack()),
       OpLoc(op), RParenLoc(rp) {
   ReflexprOperandExprBits.IsType = false;
+  ReflexprOperandExprBits.IsNamedDecl = false;
   Argument.Ex = E;
 }
+// Mirror
+
+// Mirror
+ReflexprElementOperandExpr::ReflexprElementOperandExpr(TypeSourceInfo *TInfo,
+    QualType MoSeqT, SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprElementOperandExprClass, MoSeqT, VK_RValue, OK_Ordinary,
+         TInfo->getType()->isDependentType(),
+         // Value-dependent if the argument is type-dependent.
+         TInfo->getType()->isDependentType(),
+         TInfo->getType()->isInstantiationDependentType(),
+         TInfo->getType()->containsUnexpandedParameterPack()),
+    OpLoc(op), RParenLoc(rp) {
+  MoSeqTy = TInfo;
+}          
 // Mirror
 
 UnaryExprOrTypeTraitExpr::UnaryExprOrTypeTraitExpr(
@@ -3004,6 +3036,7 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
   case OffsetOfExprClass:
   case ImplicitValueInitExprClass:
   case ReflexprOperandExprClass: // Mirror
+  case ReflexprElementOperandExprClass: // Mirror
   case UnaryExprOrTypeTraitExprClass:
   case AddrLabelExprClass:
   case GNUNullExprClass:
@@ -3960,6 +3993,12 @@ Stmt::child_range ReflexprOperandExpr::children() {
     return child_range(child_iterator(), child_iterator());
   }
   return child_range(&Argument.Ex, &Argument.Ex + 1);
+}
+
+// ReflexprElementOperandExpr
+Stmt::child_range ReflexprElementOperandExpr::children() {
+  // Mirror TODO
+  return child_range(child_iterator(), child_iterator());
 }
 
 // UnaryExprOrTypeTraitExpr

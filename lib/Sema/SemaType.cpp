@@ -1448,6 +1448,7 @@ static QualType ConvertDeclSpecToType(TypeProcessingState &state) {
     }
     break;
   }
+
   // Mirror
   case DeclSpec::TST_reflexpr: {
     Expr *E = DS.getRepAsExpr();
@@ -1460,6 +1461,21 @@ static QualType ConvertDeclSpecToType(TypeProcessingState &state) {
     }
     break;
   }
+  // Mirror
+  case DeclSpec::TST_reflexprElement: {
+    // Mirror TODO
+    Expr *E = DS.getRepAsExpr();
+    assert(E && "Didn't get an expression for __reflexpr_element?");
+    // TypeQuals handled by caller.
+    Result = S.BuildReflexprElementType(E, DS.getTypeSpecTypeLoc());
+    if (Result.isNull()) {
+      Result = Context.IntTy;
+      declarator.setInvalidType(true);
+    }
+    break;
+  }
+  // Mirror
+
   case DeclSpec::TST_decltype: {
     Expr *E = DS.getRepAsExpr();
     assert(E && "Didn't get an expression for decltype?");
@@ -6882,24 +6898,6 @@ static QualType getDecltypeForExpr(Sema &S, Expr *E) {
 }
 
 // Mirror
-static QualType getTypeForReflexprExpr(Sema &S, Expr *E) {
-
-  if (const ReflexprOperandExpr *REOE = dyn_cast<ReflexprOperandExpr>(E)) {
-    if(REOE->isType()) {
-      return REOE->getType();
-    } else {
-      return QualType();
-    }
-  }
-  return getDecltypeForExpr(S, E);
-}
-// Mirror
-
-// Mirror
-
-// Mirror
-
-// Mirror TODO
 QualType Sema::BuildReflexprType(Expr *E, SourceLocation Loc) {
 
   if(!E->getType().isNull()) {
@@ -6915,7 +6913,24 @@ QualType Sema::BuildReflexprType(Expr *E, SourceLocation Loc) {
     Diag(E->getExprLoc(), diag::warn_side_effects_unevaluated_context);
   }
 
-  return Context.getReflexprType(E, getTypeForReflexprExpr(*this, E));
+  if (ReflexprOperandExpr *REOE = dyn_cast<ReflexprOperandExpr>(E)) {
+    return Context.getReflexprType(REOE);
+  } else {
+    return Context.getReflexprType(E, getDecltypeForExpr(*this, E));
+  }
+}
+// Mirror
+
+// Mirror
+QualType Sema::BuildReflexprElementType(Expr *E, SourceLocation Loc) {
+
+  if(!E->getType().isNull()) {
+    ExprResult ER = CheckPlaceholderExpr(E);
+    if (ER.isInvalid()) return QualType();
+    E = ER.get();
+  }
+
+  return Context.getReflexprElementType(E);
 }
 // Mirror
 

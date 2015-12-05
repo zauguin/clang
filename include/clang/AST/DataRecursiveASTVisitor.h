@@ -893,6 +893,10 @@ DEF_TRAVERSE_TYPE(TypeOfType, { TRY_TO(TraverseType(T->getUnderlyingType())); })
 DEF_TRAVERSE_TYPE(ReflexprType,
                   { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
 
+// Mirror
+DEF_TRAVERSE_TYPE(ReflexprElementType,
+                  { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
+
 DEF_TRAVERSE_TYPE(DecltypeType,
                   { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
 
@@ -1111,6 +1115,11 @@ DEF_TRAVERSE_TYPELOC(TypeOfType, {
 
 // Mirror
 DEF_TRAVERSE_TYPELOC(ReflexprType, {
+  TRY_TO(TraverseStmt(TL.getTypePtr()->getUnderlyingExpr()));
+})
+
+// Mirror
+DEF_TRAVERSE_TYPELOC(ReflexprElementType, {
   TRY_TO(TraverseStmt(TL.getTypePtr()->getUnderlyingExpr()));
 })
 
@@ -2111,9 +2120,18 @@ DEF_TRAVERSE_STMT(OffsetOfExpr, {
   TRY_TO(TraverseTypeLoc(S->getTypeSourceInfo()->getTypeLoc()));
 })
 
+// Mirror
 DEF_TRAVERSE_STMT(ReflexprOperandExpr, {
   if (S->isType())
     TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
+})
+
+// Mirror
+DEF_TRAVERSE_STMT(ReflexprElementOperandExpr, {
+/* Mirror TODO
+  if (S->isType())
+    TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
+*/
 })
 
 DEF_TRAVERSE_STMT(UnaryExprOrTypeTraitExpr, {

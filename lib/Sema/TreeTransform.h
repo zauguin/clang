@@ -839,7 +839,11 @@ public:
                                      UnaryTransformType::UTTKind UKind,
                                      SourceLocation Loc);
 
+  // Mirror
   QualType RebuildReflexprType(Expr *Underlying, SourceLocation Loc);
+
+  // Mirror
+  QualType RebuildReflexprElementType(Expr *Underlying, SourceLocation Loc);
 
   /// \brief Build a new C++11 decltype type.
   ///
@@ -1892,6 +1896,7 @@ public:
     return getSema().CreateReflexprOperandExpr(TInfo, OpLoc, R);
   }
 
+  // Mirror
   ExprResult RebuildReflexprOperand(Expr *SubExpr, SourceLocation OpLoc,
                                     SourceRange R) {
     ExprResult Result
@@ -1900,6 +1905,13 @@ public:
       return ExprError();
 
     return Result;
+  }
+
+  // Mirror
+  ExprResult RebuildReflexprElementOperand(TypeSourceInfo *TInfo,
+                                           SourceLocation OpLoc,
+                                           SourceRange R) {
+    return getSema().CreateReflexprElementOperandExpr(TInfo, OpLoc, R);
   }
   // Mirror
 
@@ -5076,6 +5088,43 @@ QualType TreeTransform<Derived>::TransformReflexprType(TypeLocBuilder &TLB,
   return Result;
 }
 
+// Mirror
+template<typename Derived>
+QualType
+TreeTransform<Derived>::TransformReflexprElementType(TypeLocBuilder &TLB,
+                                                   ReflexprElementTypeLoc TL) {
+  const ReflexprElementType *T = TL.getTypePtr();
+
+  // decltype expressions are not potentially evaluated contexts
+  EnterExpressionEvaluationContext Unevaluated(SemaRef, Sema::Unevaluated,
+                                               nullptr,
+                                               /*IsDecltype=*/false,
+                                               /*IsReflexpr=*/true);
+
+  ExprResult E = getDerived().TransformExpr(T->getUnderlyingExpr());
+  if (E.isInvalid())
+    return QualType();
+
+  E = getSema().ActOnReflexprElementExpression(E.get());
+  if (E.isInvalid())
+    return QualType();
+
+  QualType Result = TL.getType();
+  if (getDerived().AlwaysRebuild() ||
+      E.get() != T->getUnderlyingExpr()) {
+    Result = getDerived().RebuildReflexprElementType(E.get(), TL.getNameLoc());
+    if (Result.isNull())
+      return QualType();
+  }
+  else E.get();
+
+  ReflexprElementTypeLoc NewTL = TLB.push<ReflexprElementTypeLoc>(Result);
+  NewTL.setNameLoc(TL.getNameLoc());
+
+  return Result;
+}
+// Mirror
+
 template<typename Derived>
 QualType TreeTransform<Derived>::TransformDecltypeType(TypeLocBuilder &TLB,
                                                        DecltypeTypeLoc TL) {
@@ -8035,6 +8084,25 @@ TreeTransform<Derived>::TransformReflexprOperandExpr(ReflexprOperandExpr *E) {
   return getDerived().RebuildReflexprOperand(SubExpr.get(),
                                              E->getOperatorLoc(),
                                              E->getSourceRange());
+}
+
+// Mirror
+template<typename Derived>
+ExprResult
+TreeTransform<Derived>::TransformReflexprElementOperandExpr(
+  ReflexprElementOperandExpr *E) {
+
+  TypeSourceInfo *OldT = E->getTypeInfo();
+
+  TypeSourceInfo *NewT = getDerived().TransformType(OldT);
+  if (!NewT)
+    return ExprError();
+
+  if (!getDerived().AlwaysRebuild() && OldT == NewT)
+    return E;
+
+  return getDerived().RebuildReflexprOperand(NewT, E->getOperatorLoc(),
+                                                   E->getSourceRange());
 }
 // Mirror
 
@@ -11211,10 +11279,18 @@ QualType TreeTransform<Derived>::RebuildTypeOfType(QualType Underlying) {
   return SemaRef.Context.getTypeOfType(Underlying);
 }
 
+// Mirror
 template<typename Derived>
 QualType TreeTransform<Derived>::RebuildReflexprType(Expr *E,
                                                      SourceLocation Loc) {
   return SemaRef.BuildReflexprType(E, Loc);
+}
+
+// Mirror
+template<typename Derived>
+QualType TreeTransform<Derived>::RebuildReflexprElementType(Expr *E,
+                                                       SourceLocation Loc) {
+  return SemaRef.BuildReflexprElementType(E, Loc);
 }
 
 template<typename Derived>

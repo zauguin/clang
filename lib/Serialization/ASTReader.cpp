@@ -5257,9 +5257,16 @@ QualType ASTReader::readTypeRecord(unsigned Index) {
     return Context.getTypeOfType(UnderlyingType);
   }
 
+  // Mirror
   case TYPE_REFLEXPR: {
     QualType UnderlyingType = readType(*Loc.F, Record, Idx);
     return Context.getReflexprType(ReadExpr(*Loc.F), UnderlyingType);
+  }
+
+  // Mirror
+  case TYPE_REFLEXPR_ELEMENT: {
+    QualType MoSeqType = readType(*Loc.F, Record, Idx);
+    return Context.getReflexprElementType(ReadExpr(*Loc.F), MoSeqType);
   }
 
   case TYPE_DECLTYPE: {
@@ -5653,10 +5660,16 @@ void TypeLocReader::VisitTypeOfTypeLoc(TypeOfTypeLoc TL) {
   TL.setRParenLoc(ReadSourceLocation(Record, Idx));
   TL.setUnderlyingTInfo(Reader.GetTypeSourceInfo(F, Record, Idx));
 }
+
 // Mirror
 void TypeLocReader::VisitReflexprTypeLoc(ReflexprTypeLoc TL) {
   TL.setNameLoc(ReadSourceLocation(Record, Idx));
 }
+// Mirror
+void TypeLocReader::VisitReflexprElementTypeLoc(ReflexprElementTypeLoc TL) {
+  TL.setNameLoc(ReadSourceLocation(Record, Idx));
+}
+
 void TypeLocReader::VisitDecltypeTypeLoc(DecltypeTypeLoc TL) {
   TL.setNameLoc(ReadSourceLocation(Record, Idx));
 }

@@ -6,6 +6,21 @@
 
 namespace std {
 
+// is_metaobject
+template <typename X>
+struct is_metaobject
+ : std::integral_constant<bool, __is_metaobject(X)>
+{ };
+
+template <typename X>
+using is_metaobject_t = typename is_metaobject<X>::type;
+
+template <typename X>
+constexpr bool is_metaobject_v = is_metaobject<X>::value;
+
+// namespace meta
+namespace meta {
+
 // this can be replaced for example with basic_string_literal from n4236
 template <char ... C>
 struct __reflexpr_string
@@ -49,19 +64,20 @@ struct __reflexpr_make_string
  : __reflexpr_do_make_string<S, decltype(S::_str)>
 { };
 
-// is_metaobject
-template <typename X>
-struct is_metaobject
- : std::integral_constant<bool, __is_metaobject(X)>
-{ };
+// mo_category
+template <unsigned Bits>
+struct __reflexpr_mo_category
+{
+	static constexpr const unsigned _bits = Bits;
+	typedef __reflexpr_mo_category type;
+};
 
-template <typename X>
-using is_metaobject_t = typename is_metaobject<X>::type;
-
-template <typename X>
-constexpr bool is_metaobject_v = is_metaobject<X>::value;
-
-namespace meta {
+// tags
+typedef __reflexpr_mo_category<0x00000001> namespace_tag;
+typedef __reflexpr_mo_category<0x00000003> global_scope_tag;
+typedef __reflexpr_mo_category<0x00000010> type_tag;
+typedef __reflexpr_mo_category<0x00000030> class_tag;
+typedef __reflexpr_mo_category<0x00000050> enum_tag;
 
 // get_category
 template <typename X>
@@ -115,6 +131,34 @@ using is_class = has_category<X, class_tag>;
 template <typename X>
 constexpr bool is_class_v = is_class<X>::value;
 
+
+// is_specifier
+template <typename X>
+struct is_specifier
+ : std::integral_constant<bool, X::_is_spcfr>
+{ };
+
+template <typename X>
+using is_specifier_t = typename is_specifier<X>::type;
+
+template <typename X>
+constexpr bool is_specifier_v = is_specifier<X>::value;
+
+
+// is_sequence
+template <typename X>
+struct is_sequence
+ : std::integral_constant<bool, X::_is_seq>
+{ };
+
+template <typename X>
+using is_sequence_t = typename is_sequence<X>::type;
+
+template <typename X>
+constexpr bool is_sequence_v = is_sequence<X>::value;
+
+
+
 // has_name
 template <typename X>
 struct has_name
@@ -131,10 +175,23 @@ constexpr bool has_name_v = has_name<X>::value;
 template <typename X>
 struct get_name
  : __reflexpr_make_string<typename X::_base_name>
-{ };
+{
+	static_assert(has_name_v<X>, "");
+};
 
 template <typename X>
 constexpr auto& get_name_v = get_name<X>::value;
+
+// get_keyword
+template <typename X>
+struct get_keyword
+ : __reflexpr_make_string<typename X::_keyword>
+{
+	static_assert(is_specifier_v<X>, "");
+};
+
+template <typename X>
+constexpr auto& get_keyword_v = get_keyword<X>::value;
 
 // has_scope
 template <typename X>
@@ -164,6 +221,8 @@ constexpr bool is_scope_v = is_scope<X>::value;
 template <typename X>
 struct get_scope
 {
+	static_assert(has_scope_v<X>, "");
+
 	typedef typename X::_scope type;
 };
 
@@ -207,6 +266,8 @@ constexpr unsigned source_column_v = source_column<X>::value;
 template <typename X>
 struct get_type
 {
+	static_assert(is_type_v<X>, "");
+
 	typedef typename X::_orig_type type;
 };
 
@@ -229,6 +290,8 @@ constexpr bool is_alias_v = is_alias<X>::value;
 template <typename X>
 struct get_aliased
 {
+	static_assert(is_alias_v<X>, "");
+
 	typedef typename X::_aliased type;
 };
 
@@ -240,11 +303,47 @@ template <typename X>
 struct get_typedef_type
  : get_aliased<X>
 {
-	static_assert(has_category_v<X, type_tag>, "");
+	static_assert(is_type_v<X>, "");
 };
 
 template <typename X>
 using get_typedef_type_t = typename get_typedef_type<X>::type;
+
+// get_elaborated_type_specifier
+template <typename X>
+struct get_elaborated_type_specifier
+{
+	typedef typename X::_tag_spc type;
+};
+
+template <typename X>
+using get_elaborated_type_specifier_t =
+	typename get_elaborated_type_specifier<X>::type;
+
+// get_data_members
+template <typename X>
+struct get_data_members
+{
+	static_assert(is_class_v<X>, "");
+
+	typedef typename X::_data_mems type;
+};
+
+template <typename X>
+using get_data_members_t = typename get_data_members<X>::type;
+
+
+// get_element
+template <typename X, size_t I>
+struct get_element
+{
+	static_assert(is_sequence_v<X>, "");
+	// TODO
+	//typedef __reflexpr_element(typename X::_container) type;
+};
+
+//template <typename X, size_t I>
+//using get_element_t = typename get_element<X, I>::type;
 
 } // namespace meta
 } // namespace std

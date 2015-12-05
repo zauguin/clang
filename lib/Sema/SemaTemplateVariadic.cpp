@@ -711,7 +711,8 @@ bool Sema::containsUnexpandedParameterPacks(Declarator &D) {
       
   case TST_typeofExpr:
   case TST_decltype:
-  case TST_reflexpr:
+  case TST_reflexpr: // Mirror
+  case TST_reflexprElement: // Mirror
     if (DS.getRepAsExpr() && 
         DS.getRepAsExpr()->containsUnexpandedParameterPack())
       return true;

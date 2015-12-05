@@ -792,11 +792,10 @@ ExprResult Parser::ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc ) {
                                                    nullptr,
                                                    /*IsDecltype=*/false,
                                                    /*IsReflexpr=*/true);
-      bool isCastExpr = false;
       ParsedType ExprTy;
       SourceRange ExprRange;
       Result = Actions.CorrectDelayedTyposInExpr(
-           ParseExprAfterReflexpr(OpTok, isCastExpr, ExprTy, ExprRange),
+           ParseExprAfterReflexpr(OpTok, ExprTy, ExprRange),
            [](Expr *E) {
              return E->hasPlaceholderType() ? ExprError() : E;
       });
@@ -851,6 +850,38 @@ ExprResult Parser::ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc ) {
   return Result;
 }
 // Mirror
+
+// Mirror
+/// ParseReflexprElementSpecifier - Parse the __reflexpr_element specifier.
+///
+/// '__reflexpr_element' ( metaobject, element_kind, element_index )
+///
+ExprResult Parser::ParseReflexprElementSpecifier(DeclSpec &DS,
+                                                 SourceLocation* Loc ) {
+  assert(Tok.is(tok::kw___reflexpr_element)
+           && "Not a __reflexpr_element specifier");
+
+  Token OpTok = Tok;
+
+  ExprResult Result = ExprError();
+
+  ConsumeToken(); // __reflexpr_element
+
+  ParsedType MoSeqTy;
+  SourceRange ExprRange;
+
+  Result = ParseExprAfterReflexprElement(OpTok, MoSeqTy, ExprRange);
+
+  if (Result.isInvalid()) {
+      Diag(OpTok, diag::err_failed_to_parse_reflexpr_element);
+  }
+
+  if (Loc) *Loc = ExprRange.getEnd();
+
+  // Mirror TODO act
+
+  return Result;
+}
 
 /// ParseDecltypeSpecifier - Parse a C++11 decltype specifier.
 ///

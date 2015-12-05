@@ -2619,6 +2619,7 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
   case Type::TypeOfExpr:
   case Type::TypeOf:
   case Type::Reflexpr: // Mirror
+  case Type::ReflexprElement: // Mirror
   case Type::Decltype:
   case Type::UnaryTransform:
   case Type::DependentName:
@@ -4096,8 +4097,6 @@ void ASTContext::addMetaobjectBase(CXXRecordDecl* mo_decl,
   mo_decl->setBases(&basespec, 1);
 
   Deallocate(basespec);
-  base_mo_decl->setReferenced();
-
 }
 
 // Mirror
@@ -4120,7 +4119,20 @@ void ASTContext::addMetaobjectInjectDecl(CXXRecordDecl* mo_decl,
 }
 
 // Mirror
-std::string ASTContext::makeMetaNamespaceName(const NamespaceDecl* ns_decl) {
+std::string ASTContext::makeMetaSpecifierName(const StringRef& spec_kw) {
+
+  std::string result("__reflexpr_mspc_");
+  if(spec_kw.empty()) {
+    result.append("none");
+  } else {
+    result.append(spec_kw);
+  }
+
+  return result;
+}
+
+// Mirror
+std::string ASTContext::makeMetaNamespaceName(const NamedDecl* ns_decl) {
 
   std::string result("__reflexpr_mnsp");
 
@@ -4129,7 +4141,6 @@ std::string ASTContext::makeMetaNamespaceName(const NamespaceDecl* ns_decl) {
   result.append(std::to_string(hshf(ns_decl->getQualifiedNameAsString())));
 
   return result;
-
 }
 
 // Mirror
@@ -4182,17 +4193,17 @@ CXXRecordDecl* ASTContext::lookupPrevMetaobjectDecl(IdentifierInfo& mo_ident) {
 }
 
 // Mirror
-CXXRecordDecl* ASTContext::createNewMetaobjectDecl(IdentifierInfo& mo_ident,
+CXXRecordDecl* ASTContext::createNewMetaobjectDecl(DeclContext* decl_ctxt,
+                                                   IdentifierInfo& mo_ident,
                                                    SourceLocation loc) {
 
-  TranslationUnitDecl* tudecl = getTranslationUnitDecl();
-  assert(tudecl != nullptr);
+  assert(decl_ctxt != nullptr);
   // The declaration of the metaobject record
-  CXXRecordDecl* mo_decl = CXXRecordDecl::Create(*this, TTK_Struct, tudecl,
+  CXXRecordDecl* mo_decl = CXXRecordDecl::Create(*this, TTK_Struct, decl_ctxt,
                                                  loc, loc,
                                                  &mo_ident);
   assert(mo_decl != nullptr);
-  tudecl->addDecl(mo_decl);
+  decl_ctxt->addDecl(mo_decl);
 
   NestedNameSpecifierLocBuilder mo_nnslb;
   mo_nnslb.Extend(*this, &mo_ident, loc, loc);
@@ -4200,6 +4211,14 @@ CXXRecordDecl* ASTContext::createNewMetaobjectDecl(IdentifierInfo& mo_ident,
   mo_decl->startDefinition();
 
   return mo_decl;
+
+}
+
+// Mirror
+CXXRecordDecl* ASTContext::createNewMetaobjectDecl(IdentifierInfo& mo_ident,
+                                                   SourceLocation loc) {
+
+  return createNewMetaobjectDecl(getTranslationUnitDecl(), mo_ident, loc);
 }
 
 // Mirror
@@ -4207,11 +4226,73 @@ QualType ASTContext::finalizeMetaobject(CXXRecordDecl* mo_decl) {
 
   // finalize the metaobject record
   mo_decl->completeDefinition();
-  mo_decl->setReferenced();
   mo_decl->setIsMetaobject();
+  mo_decl->setImplicit();
 
   return QualType(new(*this, TypeAlignment) RecordType(mo_decl), 0);
 }
+
+// Mirror
+void ASTContext::addMetaobjectSequence(CXXRecordDecl* parent_decl,
+                                       const StringRef& moseq_ident,
+                                       MetaobjectSequenceKind moseq_kind,
+                                       SourceLocation loc) {
+
+  IdentifierInfo& ident_info = Idents.get(moseq_ident);
+
+  // The declaration of the metaobject sequence record
+  CXXRecordDecl* moseq_decl =
+    createNewMetaobjectDecl(parent_decl, ident_info, loc);
+
+  // inherit from base metaobject
+  addMetaobjectBase(moseq_decl, "__reflexpr_moseq_base", loc);
+
+  // injected record decl
+  addMetaobjectInjectDecl(moseq_decl, ident_info, loc);
+
+  // The containing metaobject
+  QualType parent_type(new(*this, TypeAlignment) RecordType(parent_decl), 0);
+  addMetaobjectTypedef(moseq_decl, "_container", parent_type, loc);
+
+  // Sequence kind
+  addMetaobjectUIntTrait(moseq_decl, "_seq_kind", unsigned(moseq_kind), loc);
+
+  // public access
+  moseq_decl->setAccess(AS_public);
+
+  // finalize the sequence
+  finalizeMetaobject(moseq_decl);
+}
+
+// Mirror
+QualType ASTContext::getMetaSpecifier(const StringRef& spec_kw) {
+
+  // metaobject name
+  IdentifierInfo& ms_ident = Idents.get(makeMetaSpecifierName(spec_kw));
+
+  // try to find any previous declarations of this metaobject
+  CXXRecordDecl* ms_decl = lookupPrevMetaobjectDecl(ms_ident);
+  if(ms_decl != nullptr) {
+    return QualType(ms_decl->getTypeForDecl(), 0);
+  }
+  // Invalid source location since the metaobject is generated
+  SourceLocation loc;
+  // The declaration of the metaobject record
+  ms_decl = createNewMetaobjectDecl(ms_ident, loc);
+
+  // inherit from base meta specifier
+  addMetaobjectBase(ms_decl, "__reflexpr_meta_spc_base", loc);
+
+  // injected record decl
+  addMetaobjectInjectDecl(ms_decl, ms_ident, loc);
+
+  // keyword
+  addMetaobjectCTString(ms_decl, "_keyword", spec_kw, loc);
+
+  // finalize the metaobject record
+  return finalizeMetaobject(ms_decl);
+}
+// Mirror
 
 // Mirror
 // This must be kept in sync with tag definitions in reflexpr_base.hpp
@@ -4248,7 +4329,7 @@ QualType ASTContext::getMetaGlobalScope(void) {
 // Mirror
 
 // Mirror
-QualType ASTContext::getMetaNamespace(const NamespaceDecl* ns_decl) {
+QualType ASTContext::getMetaNamespace(const NamedDecl* ns_decl) {
 
   assert(ns_decl != nullptr);
 
@@ -4277,6 +4358,15 @@ QualType ASTContext::getMetaNamespace(const NamespaceDecl* ns_decl) {
   // name
   addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
   addMetaobjectCTString(mo_decl, "_base_name", ns_decl->getName(), loc);
+
+  // alias
+  if(const NamespaceAliasDecl* na_decl=dyn_cast<NamespaceAliasDecl>(ns_decl)) {
+
+    QualType na_mans = getMetaNamespace(na_decl->getAliasedNamespace());
+
+    addMetaobjectBoolTrait(mo_decl, "_is_alias", true, loc);
+    addMetaobjectTypedef(mo_decl, "_aliased", na_mans, loc);
+  }
 
   // finalize the metaobject record
   return finalizeMetaobject(mo_decl);
@@ -4346,11 +4436,45 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
 
   // scope and name
   if(rt_decl) {
-    if(const CXXRecordDecl* rt_rd = dyn_cast<CXXRecordDecl>(rt_decl)) {
+    if(const TagDecl* rt_td = dyn_cast<TagDecl>(rt_decl)) {
+        StringRef tag_kw;
+
+        switch(rt_td->getTagKind()) {
+          case TTK_Enum: 
+            mo_category = reflexprEnumTag;
+            tag_kw = "enum";
+            break;
+          case TTK_Class: 
+            mo_category = reflexprClassTag;
+            tag_kw = "class";
+            break;
+          case TTK_Union: 
+            mo_category = reflexprClassTag;
+            tag_kw = "union";
+            break;
+          case TTK_Struct: 
+          default:;
+            mo_category = reflexprClassTag;
+            tag_kw = "struct";
+            break;
+        }
+
+        addMetaobjectTypedef(mo_decl, "_tag_spc", getMetaSpecifier(tag_kw),loc);
+    }
+
+    if(const RecordDecl* rt_rd = dyn_cast<RecordDecl>(rt_decl)) {
       (void)rt_rd;
-      mo_category = reflexprClassTag;
       addMetaobjectBoolTrait(mo_decl, "_is_scope", true, loc);
-      // TODO: members
+      // data members
+      addMetaobjectSequence(mo_decl, "_data_mems", MoSK_ClassDataMembers, loc);
+    }
+
+    if(const EnumDecl* rt_ed = dyn_cast<EnumDecl>(rt_decl)) {
+      if(rt_ed->isScoped()) {
+        addMetaobjectBoolTrait(mo_decl, "_is_scope", true, loc);
+      }
+      // enum members
+      addMetaobjectSequence(mo_decl, "_enum_mems", MoSK_EnumMembers, loc);
     }
 
     bool mo_has_scope_v = false;
@@ -4414,18 +4538,28 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
   return finalizeMetaobject(mo_decl);
 }
 
-QualType ASTContext::getMetaobject(Expr *e, QualType ReflectedType) {
-  if(e != nullptr) {
-    if(const ReflexprOperandExpr* REOE = dyn_cast<ReflexprOperandExpr>(e)) {
-      if(REOE->isEmpty()) {
-        return getMetaGlobalScope();
-      }
+// Mirror
+QualType ASTContext::getReflexprType(ReflexprOperandExpr *e) {
+
+  ReflexprType* rt = nullptr;
+  if(e->isEmpty()) {
+    rt = new (*this, TypeAlignment)
+        ReflexprType(e, getMetaGlobalScope(), QualType());
+  } else if(e->isNamedDecl()) {
+    const NamedDecl* nsd = e->getNamedDecl();
+    assert(nsd != nullptr);
+    if(isa<NamespaceDecl>(nsd) || isa<NamespaceAliasDecl>(nsd)) {
+      rt = new (*this, TypeAlignment)
+          ReflexprType(e, getMetaNamespace(nsd), QualType());
     }
   }
-  assert(!ReflectedType.isNull());
 
-  return getMetaType(ReflectedType);
-
+  if(rt != nullptr) {
+    Types.push_back(rt);
+    return QualType(rt, 0);
+  } else {
+    return getReflexprType(e, e->getType());
+  }
 }
 
 // Mirror
@@ -4455,11 +4589,35 @@ QualType ASTContext::getReflexprType(Expr *e, QualType ReflectedType) {
           DependentReflexprType(*this, e);
   } else {
     rt = new (*this, TypeAlignment)
-          ReflexprType(e, getMetaobject(e, ReflectedType), ReflectedType);
+          ReflexprType(e, getMetaType(ReflectedType), ReflectedType);
   }
 
   Types.push_back(rt);
   return QualType(rt, 0);
+}
+
+// Mirror
+QualType ASTContext::getReflexprElementType(Expr *e) {
+  ReflexprElementType* ret = nullptr;
+
+  if(e->isInstantiationDependent()) {
+    ret = new (*this, TypeAlignment)
+           DependentReflexprElementType(*this, e);
+  } else if (ReflexprElementOperandExpr* REEOR =
+               dyn_cast<ReflexprElementOperandExpr>(e)) {
+    // Mirror TODO
+    ret = new (*this, TypeAlignment)
+           ReflexprElementType(REEOR, REEOR->getType(), REEOR->getType());
+
+  }
+
+  return QualType(ret, 0);
+}
+
+// Mirror
+QualType ASTContext::getReflexprElementType(Expr *e, QualType MoSeqType) {
+  // Mirror TODO
+  return getReflexprElementType(e);
 }
 // Mirror
 

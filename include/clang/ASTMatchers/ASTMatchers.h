@@ -1767,6 +1767,11 @@ const internal::VariadicDynCastAllOfMatcher<
   Stmt,
   ReflexprOperandExpr> reflexprOperandExpr;
 
+// Mirror
+const internal::VariadicDynCastAllOfMatcher<
+  Stmt,
+  ReflexprElementOperandExpr> reflexprElementOperandExpr;
+
 /// \brief Matches sizeof (C99), alignof (C++11) and vec_step (OpenCL)
 ///
 /// Given

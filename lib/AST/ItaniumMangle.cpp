@@ -1524,6 +1524,7 @@ bool CXXNameMangler::mangleUnresolvedTypeOrSimpleId(QualType Ty,
   case Type::TypeOfExpr:
   case Type::TypeOf:
   case Type::Reflexpr: // Mirror
+  case Type::ReflexprElement: // Mirror
   case Type::Decltype:
   case Type::TemplateTypeParm:
   case Type::UnaryTransform:
@@ -2628,6 +2629,10 @@ void CXXNameMangler::mangleType(const ReflexprType *T) {
   Out << 'E';
 }
 
+void CXXNameMangler::mangleType(const ReflexprElementType *T) {
+      llvm_unreachable("Cannot mangle __reflexpr_element type");
+}
+
 void CXXNameMangler::mangleType(const DecltypeType *T) {
   Expr *E = T->getUnderlyingExpr();
 
@@ -3138,6 +3143,16 @@ recurse:
       DiagnosticsEngine &Diags = Context.getDiags();
       unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
                                      "cannot yet mangle reflexpr operand expr");
+      Diags.Report(DiagID);
+      return;
+  }
+  // Mirror
+
+  // Mirror TODO
+  case Expr::ReflexprElementOperandExprClass: {
+      DiagnosticsEngine &Diags = Context.getDiags();
+      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
+                        "cannot yet mangle __reflexpr_element operand expr");
       Diags.Report(DiagID);
       return;
   }

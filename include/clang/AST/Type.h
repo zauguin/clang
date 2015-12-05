@@ -3449,10 +3449,8 @@ public:
   QualType getReflectedType() const { return ReflectedType; }
   QualType getReflectingType() const { return ReflectingType; }
 
-  /// \brief Remove a single level of sugar.
   QualType desugar() const;
 
-  /// \brief Returns whether this type directly provides sugar.
   bool isSugared() const;
 
   static bool classof(const Type *T) { return T->getTypeClass() == Reflexpr; }
@@ -3464,6 +3462,46 @@ class DependentReflexprType : public ReflexprType, public llvm::FoldingSetNode {
 
 public:
   DependentReflexprType(const ASTContext &Context, Expr *E);
+
+  void Profile(llvm::FoldingSetNodeID &ID) {
+    Profile(ID, Context, getUnderlyingExpr());
+  }
+
+  static void Profile(llvm::FoldingSetNodeID &ID, const ASTContext &Context,
+                      Expr *E);
+};
+
+// Mirror
+class ReflexprElementType : public Type {
+  Expr *E;
+  QualType MoSeqType;
+  QualType ElemType;
+
+protected:
+  ReflexprElementType(Expr* E, QualType moSeqType, QualType elemType);
+  friend class ASTContext;
+
+public:
+  Expr *getUnderlyingExpr() const { return E; }
+  QualType getMetaobjectSequenceType() const { return MoSeqType; }
+  QualType getElementType() const { return ElemType; }
+
+  QualType desugar() const;
+
+  bool isSugared() const;
+
+  static bool classof(const Type *T) {
+    return T->getTypeClass() == ReflexprElement;
+  }
+};
+
+// Mirror
+class DependentReflexprElementType : public ReflexprElementType
+                                   , public llvm::FoldingSetNode {
+  const ASTContext &Context;
+
+public:
+  DependentReflexprElementType(const ASTContext &Context, Expr *E);
 
   void Profile(llvm::FoldingSetNodeID &ID) {
     Profile(ID, Context, getUnderlyingExpr());

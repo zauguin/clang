@@ -300,6 +300,7 @@ public:
   static const TST TST_decltype = clang::TST_decltype;
   static const TST TST_decltype_auto = clang::TST_decltype_auto;
   static const TST TST_reflexpr = clang::TST_reflexpr; // Mirror
+  static const TST TST_reflexprElement = clang::TST_reflexprElement; // Mirror
   static const TST TST_underlyingType = clang::TST_underlyingType;
   static const TST TST_auto = clang::TST_auto;
   static const TST TST_unknown_anytype = clang::TST_unknown_anytype;
@@ -398,7 +399,7 @@ private:
 
   static bool isTypeRep(TST T) {
     return (T == TST_typename || T == TST_typeofType ||
-            T == TST_reflexpr || // Mirror
+            T == TST_reflexpr || T == TST_reflexprElement || // Mirror
             T == TST_underlyingType || T == TST_atomic);
   }
   static bool isExprRep(TST T) {

@@ -524,6 +524,18 @@ void ASTStmtWriter::VisitReflexprOperandExpr(ReflexprOperandExpr *E) {
 }
 // Mirror
 
+// Mirror
+void ASTStmtWriter::VisitReflexprElementOperandExpr(
+       ReflexprElementOperandExpr *E) {
+  VisitExpr(E);
+  Writer.AddTypeSourceInfo(E->getTypeInfo(), Record);
+  // TODO
+  Writer.AddSourceLocation(E->getOperatorLoc(), Record);
+  Writer.AddSourceLocation(E->getRParenLoc(), Record);
+  Code = serialization::EXPR_REFLEXPR_ELEMENT_OP;
+}
+// Mirror
+
 void ASTStmtWriter::VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *E) {
   VisitExpr(E);
   Record.push_back(E->getKind());

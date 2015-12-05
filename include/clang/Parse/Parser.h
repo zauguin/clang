@@ -1427,9 +1427,14 @@ private:
 
   // Mirror
   ExprResult ParseExprAfterReflexpr(const Token &OpTok,
-                                    bool &isCastExpr,
-                                    ParsedType &CastTy,
-                                    SourceRange &CastRange);
+                                    ParsedType &ExprTy,
+                                    SourceRange &ExprRange);
+
+  // Mirror
+  ExprResult ParseExprAfterReflexprElement(const Token& OpTok,
+                                           ParsedType &ExprType,
+                                           SourceRange &ExprRange);
+
 
   ExprResult ParseExprAfterUnaryExprOrTypeTrait(const Token &OpTok,
                                                      bool &isCastExpr,
@@ -2230,6 +2235,7 @@ private:
 
   // Mirror
   ExprResult ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc);
+  ExprResult ParseReflexprElementSpecifier(DeclSpec &DS, SourceLocation* Loc);
 
   void ParseTypeofSpecifier(DeclSpec &DS);
   SourceLocation ParseDecltypeSpecifier(DeclSpec &DS);

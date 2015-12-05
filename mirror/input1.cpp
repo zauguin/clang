@@ -1,12 +1,12 @@
 #include "reflexpr_base.hpp"
 
-template <typename T>
-int foo(void)
+template <typename X, unsigned I>
+struct foo
 {
-	return int(sizeof(reflexpr(T)));
-}
+	typedef __reflexpr_element(X, I) type;
+};
 
 int main(void)
 {
-	return foo<int>();
+	return sizeof(foo<reflexpr(int), 0>::type);
 }

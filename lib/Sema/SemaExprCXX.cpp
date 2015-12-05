@@ -5510,6 +5510,47 @@ bool Sema::isReflexprHeaderIncluded(SourceLocation OpLoc) {
 
 // Mirror
 ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
+                                         SourceRange ArgRange) {
+
+  if(!isReflexprHeaderIncluded(OpLoc)) {
+    return ExprError();
+  }
+
+  return CreateReflexprOperandExpr(OpLoc, ArgRange);
+}
+// Mirror
+
+// Mirror
+ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
+                                         SourceRange ArgRange,
+                                         Scope* S,
+                                         CXXScopeSpec& SS,
+                                         const IdentifierInfo& Ident) {
+
+  if(!isReflexprHeaderIncluded(OpLoc)) {
+    return ExprError();
+  }
+
+  LookupResult R(*this, &Ident, ArgRange.getBegin(), LookupNamespaceName);
+  LookupParsedName(R, S, &SS);
+  // TODO: variables
+
+  if(!R.empty() && !R.isAmbiguous()) {
+    if(const NamedDecl* n_decl = R.getFoundDecl()) {
+      if( isa<NamespaceDecl>(n_decl) ||
+          isa<NamespaceAliasDecl>(n_decl)
+      ) {
+        return CreateReflexprOperandExpr(n_decl, OpLoc, ArgRange);
+      }
+    }
+  }
+
+  return ExprError();
+}
+// Mirror
+
+// Mirror
+ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
                                          SourceRange ArgRange,
                                          ParsedType& ExprTy) {
 
@@ -5520,18 +5561,6 @@ ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
   TypeSourceInfo *TInfo;
   (void) GetTypeFromParser(ExprTy, &TInfo);
   return CreateReflexprOperandExpr(TInfo, OpLoc, ArgRange);
-}
-// Mirror
-
-// Mirror
-ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
-                                         SourceRange ArgRange) {
-
-  if(!isReflexprHeaderIncluded(OpLoc)) {
-    return ExprError();
-  }
-
-  return CreateReflexprOperandExpr(OpLoc, ArgRange);
 }
 // Mirror
 
@@ -5615,6 +5644,27 @@ ExprResult Sema::ActOnReflexprExpression(Expr *E) {
   }
 
   // Possibly strip off the top CXXBindTemporaryExpr.
+  return E;
+}
+// Mirror
+
+// Mirror
+ExprResult Sema::ActOnReflexprElementExpression(ParsedType& MoSeqTy,
+                                                SourceLocation OpLoc,
+                                                SourceLocation EndLoc) {
+  TypeSourceInfo* MoSeqTI = nullptr;
+  QualType MoSeqT = GetTypeFromParser(MoSeqTy, &MoSeqTI);
+  MoSeqTI = Context.getTrivialTypeSourceInfo(MoSeqT, OpLoc);
+
+  // Mirror TODO: index
+  return CreateReflexprElementOperandExpr(MoSeqTI, OpLoc, EndLoc);
+}
+
+// Mirror
+ExprResult Sema::ActOnReflexprElementExpression(Expr *E) {
+  assert(ExprEvalContexts.back().IsReflexpr && "not in a reflexpr expression");
+
+  // Mirror TODO
   return E;
 }
 // Mirror

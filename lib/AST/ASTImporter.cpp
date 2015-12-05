@@ -62,6 +62,7 @@ namespace clang {
     // FIXME: DependentTypeOfExprType
     QualType VisitTypeOfType(const TypeOfType *T);
     QualType VisitReflexprType(const ReflexprType *T); // Mirror
+    QualType VisitReflexprElementType(const ReflexprElementType *T); // Mirror
     QualType VisitDecltypeType(const DecltypeType *T);
     QualType VisitUnaryTransformType(const UnaryTransformType *T);
     QualType VisitAutoType(const AutoType *T);
@@ -683,6 +684,14 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
     if (!IsStructurallyEquivalent(Context,
                                   cast<ReflexprType>(T1)->getUnderlyingExpr(),
                                   cast<ReflexprType>(T2)->getUnderlyingExpr()))
+      return false;
+    break;
+
+  // Mirror
+  case Type::ReflexprElement:
+    if (!IsStructurallyEquivalent(Context,
+                           cast<ReflexprElementType>(T1)->getUnderlyingExpr(),
+                           cast<ReflexprElementType>(T2)->getUnderlyingExpr()))
       return false;
     break;
 
@@ -1734,6 +1743,21 @@ QualType ASTNodeImporter::VisitReflexprType(const ReflexprType *T) {
     return QualType();
 
   return Importer.getToContext().getReflexprType(ToExpr, ReflectedType);
+}
+// Mirror
+
+// Mirror
+QualType ASTNodeImporter::VisitReflexprElementType(const ReflexprElementType*T){
+  // FIXME: Make sure that the "to" context supports C++0x!
+  Expr *ToExpr = Importer.Import(T->getUnderlyingExpr());
+  if (!ToExpr)
+    return QualType();
+  
+  QualType MoSeqType = Importer.Import(T->getMetaobjectSequenceType());
+  if (MoSeqType.isNull())
+    return QualType();
+
+  return Importer.getToContext().getReflexprElementType(ToExpr, MoSeqType);
 }
 // Mirror
 

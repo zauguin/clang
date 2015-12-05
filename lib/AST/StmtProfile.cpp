@@ -669,6 +669,15 @@ StmtProfiler::VisitReflexprOperandExpr(const ReflexprOperandExpr *S) {
 }
 // Mirror
 
+// Mirror
+void
+StmtProfiler::VisitReflexprElementOperandExpr(
+  const ReflexprElementOperandExpr *S) {
+  VisitExpr(S);
+  VisitType(S->getType());
+}
+// Mirror
+
 void
 StmtProfiler::VisitUnaryExprOrTypeTraitExpr(const UnaryExprOrTypeTraitExpr *S) {
   VisitExpr(S);

@@ -1,11 +1,10 @@
-namespace foo {
-
-typedef int bar;
-
-}
+template <size_t I>
+struct foo
+{
+	static constexpr size_t x = sizeof(I);
+};
 
 int main(void)
 {
-	foo::bar x;
-	return 0;
+	return foo<int>::x?0:1;
 }

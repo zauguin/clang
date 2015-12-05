@@ -3751,6 +3751,17 @@ Sema::CreateReflexprOperandExpr(SourceLocation OpLoc, SourceRange R) {
 
 // Mirror
 ExprResult
+Sema::CreateReflexprOperandExpr(const NamedDecl* n_decl,
+                                SourceLocation OpLoc,
+                                SourceRange R) {
+  if (!n_decl)
+    return ExprError();
+
+  return new (Context) ReflexprOperandExpr(n_decl, OpLoc, R.getEnd());
+}
+
+// Mirror
+ExprResult
 Sema::CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
                                 SourceLocation OpLoc,
                                 SourceRange R) {
@@ -3795,6 +3806,19 @@ Sema::CreateReflexprOperandExpr(Expr* E,
   // Mirror TODO:
   return new (Context) ReflexprOperandExpr(
       E, Context.getSizeType(), OpLoc, E->getSourceRange().getEnd());
+}
+
+// Mirror
+ExprResult
+Sema::CreateReflexprElementOperandExpr(TypeSourceInfo *TInfo,
+                                       SourceLocation OpLoc,
+                                       SourceRange R) {
+  if (!TInfo)
+    return ExprError();
+
+  QualType T = TInfo->getType();
+
+  return new (Context) ReflexprElementOperandExpr(TInfo, T, OpLoc, R.getEnd());
 }
 // Mirror
 
@@ -13203,6 +13227,9 @@ bool Sema::tryCaptureVariable(
           break;
         case Type::Reflexpr: // Mirror TODO
           QTy = cast<ReflexprType>(Ty)->desugar();
+          break;
+        case Type::ReflexprElement: // Mirror TODO
+          QTy = cast<ReflexprElementType>(Ty)->desugar();
           break;
         case Type::Decltype:
           QTy = cast<DecltypeType>(Ty)->desugar();

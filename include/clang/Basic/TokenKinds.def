@@ -356,6 +356,7 @@ CXX11_KEYWORD(thread_local          , 0)
 
 // Mirror keywords
 KEYWORD(reflexpr              , KEYCXX)
+KEYWORD(__reflexpr_element    , KEYCXX)
 
 // C++ concepts TS keywords
 CONCEPTS_KEYWORD(concept)

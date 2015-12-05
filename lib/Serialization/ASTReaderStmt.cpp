@@ -592,14 +592,22 @@ void ASTStmtReader::VisitOffsetOfExpr(OffsetOfExpr *E) {
 // Mirror TODO
 void ASTStmtReader::VisitReflexprOperandExpr(ReflexprOperandExpr *E) {
   VisitExpr(E);
-/*
   if (Record[Idx] == 0) {
     E->setArgument(Reader.ReadSubExpr());
     ++Idx;
   } else {
     E->setArgument(GetTypeSourceInfo(Record, Idx));
   }
-*/
+  E->setOperatorLoc(ReadSourceLocation(Record, Idx));
+  E->setRParenLoc(ReadSourceLocation(Record, Idx));
+}
+// Mirror
+
+// Mirror TODO
+void ASTStmtReader::VisitReflexprElementOperandExpr(
+      ReflexprElementOperandExpr *E) {
+  VisitExpr(E);
+  E->setArgument(GetTypeSourceInfo(Record, Idx));
   E->setOperatorLoc(ReadSourceLocation(Record, Idx));
   E->setRParenLoc(ReadSourceLocation(Record, Idx));
 }
@@ -2611,6 +2619,11 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
     // Mirror
     case EXPR_REFLEXPR_OP:
       S = new (Context) ReflexprOperandExpr(Empty);
+      break;
+        
+    // Mirror
+    case EXPR_REFLEXPR_ELEMENT_OP:
+      S = new (Context) ReflexprElementOperandExpr(Empty);
       break;
 
     case EXPR_SIZEOF_ALIGN_OF:

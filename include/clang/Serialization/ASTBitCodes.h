@@ -897,7 +897,8 @@ namespace clang {
       /// \brief An AdjustedType record.
       TYPE_ADJUSTED              = 42,
       // Mirror
-      TYPE_REFLEXPR              = 47
+      TYPE_REFLEXPR              = 47,
+      TYPE_REFLEXPR_ELEMENT      = 48
     };
 
     /// \brief The type IDs for special types constructed by semantic
@@ -1220,6 +1221,8 @@ namespace clang {
       EXPR_OFFSETOF,
       // Mirror
       EXPR_REFLEXPR_OP,
+      // Mirror
+      EXPR_REFLEXPR_ELEMENT_OP,
       /// \brief A SizefAlignOfExpr record.
       EXPR_SIZEOF_ALIGN_OF,
       /// \brief An ArraySubscriptExpr record.

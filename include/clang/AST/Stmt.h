@@ -155,7 +155,14 @@ protected:
     friend class ReflexprOperandExpr;
     unsigned : NumExprBits;
 
-    unsigned IsType : 1; // true if operand is a type, false if an expression.
+    unsigned IsNamedDecl : 1; // true if operand is namespace, variable, etc.
+    unsigned IsType : 1; // true if operand is a type
+  };
+
+  // Mirror
+  class ReflexprElementOperandExprBitfields {
+    friend class ReflexprElementOperandExpr;
+    unsigned : NumExprBits;
   };
 
   class UnaryExprOrTypeTraitExprBitfields {
@@ -255,7 +262,11 @@ protected:
     ExprBitfields ExprBits;
     CharacterLiteralBitfields CharacterLiteralBits;
     FloatingLiteralBitfields FloatingLiteralBits;
+    // Mirror
     ReflexprOperandExprBitfields ReflexprOperandExprBits;
+    ReflexprElementOperandExprBitfields ReflexprElementOperandExprBits;
+    // Mirror
+
     UnaryExprOrTypeTraitExprBitfields UnaryExprOrTypeTraitExprBits;
     DeclRefExprBitfields DeclRefExprBits;
     CastExprBitfields CastExprBits;

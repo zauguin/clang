@@ -2913,12 +2913,50 @@ QualType ReflexprType::desugar() const {
   return QualType(this, 0);
 }
 
+// Mirror
 DependentReflexprType::DependentReflexprType(const ASTContext &Context, Expr *E)
   : ReflexprType(E, Context.DependentTy, Context.DependentTy)
   , Context(Context) { }
 
 void DependentReflexprType::Profile(llvm::FoldingSetNodeID &ID,
                                     const ASTContext &Context, Expr *E) {
+  assert(E != nullptr);
+  E->Profile(ID, Context, true);
+}
+
+// Mirror
+ReflexprElementType::ReflexprElementType(Expr *e,
+                                         QualType moSeqType,
+                                         QualType elemType)
+  : Type(Reflexpr, elemType, e->isInstantiationDependent(),
+         e->isInstantiationDependent(),
+         false, // ! isVariablyModified
+         e->containsUnexpandedParameterPack()),
+    E(e),
+  MoSeqType(moSeqType),
+  ElemType(elemType) {
+}
+
+bool ReflexprElementType::isSugared() const {
+  return !E->isInstantiationDependent();
+}
+
+QualType ReflexprElementType::desugar() const {
+  if (isSugared())
+    return getElementType();
+  
+  return QualType(this, 0);
+}
+
+// Mirror
+DependentReflexprElementType::DependentReflexprElementType(
+    const ASTContext &Context, Expr *E)
+  : ReflexprElementType(E, Context.DependentTy, Context.DependentTy)
+  , Context(Context) { }
+
+void DependentReflexprElementType::Profile(llvm::FoldingSetNodeID &ID,
+                                    const ASTContext &Context, Expr *E) {
+  assert(E != nullptr);
   E->Profile(ID, Context, true);
 }
 // Mirror
@@ -3530,7 +3568,6 @@ bool Type::canHaveNullability() const {
   case Type::UnresolvedUsing:
   case Type::TypeOfExpr:
   case Type::TypeOf:
-  case Type::Reflexpr: // Mirror
   case Type::Decltype:
   case Type::UnaryTransform:
   case Type::TemplateTypeParm:
@@ -3622,6 +3659,8 @@ bool Type::canHaveNullability() const {
   case Type::ObjCObject:
   case Type::ObjCInterface:
   case Type::Atomic:
+  case Type::Reflexpr: // Mirror
+  case Type::ReflexprElement: // Mirror
     return false;
   }
   llvm_unreachable("bad type kind!");

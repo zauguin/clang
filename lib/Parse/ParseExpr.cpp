@@ -753,9 +753,16 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
     ConsumeToken();
     break;
 
-  case tok::annot_reflexpr: {// Mirror
+  // Mirror
+  case tok::annot_reflexpr: {
     DeclSpec DS(AttrFactory);
     return ParseReflexprSpecifier(DS, nullptr);
+  }
+
+  // Mirror
+  case tok::kw___reflexpr_element: {
+    DeclSpec DS(AttrFactory);
+    return ParseReflexprElementSpecifier(DS, nullptr);
   }
 
   case tok::kw___super:
@@ -1674,48 +1681,122 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
 // Mirror
 ExprResult
 Parser::ParseExprAfterReflexpr(const Token &OpTok,
-                               bool &isCastExpr,
-                               ParsedType &CastTy,
-                               SourceRange &CastRange) {
+                               ParsedType &ExprTy,
+                               SourceRange &ExprRange) {
 
   assert(OpTok.isOneOf(tok::kw_reflexpr, tok::annot_reflexpr) &&
          "Not a reflexpr expression!");
 
+  SourceLocation OpLoc = OpTok.getLocation();
   ExprResult Operand;
 
-  // If the operand doesn't start with an '(', it must be an expression.
+  // The expression must be enclosed in '(' ')'
   if (Tok.isNot(tok::l_paren)) {
-
-    isCastExpr = false;
-
-    Operand = ParseCastExpression(true/*isUnaryExpression*/);
-  } else {
-    // If it starts with a '(', we know that it is either a parenthesized
-    // type-name, or it is a unary-expression that starts with a compound
-    // literal, or starts with a primary-expression that is a parenthesized
-    // expression.
-    ParenParseOption ExprType = CastExpr;
-    SourceLocation LParenLoc = Tok.getLocation(), RParenLoc;
-
-    Operand = ParseParenExpression(ExprType, true/*stopIfCastExpr*/, 
-                                   false, CastTy, RParenLoc);
-    CastRange = SourceRange(LParenLoc, RParenLoc);
-
-    // If ParseParenExpression parsed a '(typename)' sequence only, then this is
-    // a type.
-    if (ExprType == CastExpr) {
-      isCastExpr = true;
-      return ExprEmpty();
-    }
-
-    if (!Operand.isInvalid())
-      Operand = ParsePostfixExpressionSuffix(Operand.get());
+    return ExprError();
   }
 
-  // If we get here, the operand to the typeof/sizeof/alignof was an expresion.
-  isCastExpr = false;
+  // we'll be trying to parse the actual operand
+  TentativeParsingAction tps(*this);
+  SourceLocation LParenLoc = ConsumeParen(); // '('
+  ExprRange.setBegin(LParenLoc);
+
+  CXXScopeSpec SS;
+  ParseOptionalCXXScopeSpecifier(SS, ParsedType(), /*EnteringContext=*/false);
+
+  if(!SS.isInvalid() && Tok.is(tok::identifier)) {
+    IdentifierInfo *Ident = Tok.getIdentifierInfo();
+
+    ConsumeToken(); // identifier
+
+    if(Tok.is(tok::r_paren)) {
+
+      SourceLocation RParenLoc = ConsumeParen(); // ')'
+      ExprRange.setEnd(RParenLoc);
+
+      if(Ident != nullptr) {
+
+        Operand = Actions.ActOnReflexprExpression(OpLoc, ExprRange,
+                                                  getCurScope(),
+                                                  SS, *Ident);
+
+        if(!Operand.isInvalid()) {
+          tps.Commit();
+          return Operand;
+        }
+      }
+    }
+  }
+
+  // if we got here revert and start again
+  tps.Revert();
+
+  ParenParseOption ExprType = CastExpr;
+  SourceLocation RParenLoc;
+
+  Operand = ParseParenExpression(ExprType, true/*stopIfCastExpr*/, 
+                                 false, ExprTy, RParenLoc);
+  ExprRange.setEnd(RParenLoc);
+
+  // If ParseParenExpression parsed a '(typename)' sequence only, then this is
+  // a type.
+  if (ExprType == CastExpr) {
+    return ExprEmpty();
+  }
+
+  if (!Operand.isInvalid())
+    Operand = ParsePostfixExpressionSuffix(Operand.get());
+
   return Operand;
 
+}
+// Mirror
+
+// Mirror
+ExprResult
+Parser::ParseExprAfterReflexprElement(const Token& OpTok,
+                                      ParsedType& MoSeqTy,
+                                      SourceRange& ExprRange){
+
+  assert(OpTok.is(tok::kw___reflexpr_element) &&
+         "Not a __reflexpr_element expression!");
+
+  // TODO better diagnostic
+
+  SourceLocation OpLoc = OpTok.getLocation();
+
+  BalancedDelimiterTracker Parens(*this, tok::l_paren);
+  if (Parens.expectAndConsume())
+    return ExprError();
+
+  ExprRange.setBegin(Parens.getOpenLocation());
+
+  TypeResult Ty = ParseTypeName();
+
+  if (Ty.isInvalid()) {
+    Parens.skipToEnd();
+    return ExprError();
+  }
+
+  if(Tok.isNot(tok::comma)) {
+    return ExprError();
+  }
+
+  ConsumeToken(); // '('
+
+  // TODO: Properly parse and act on Index
+  ConsumeToken(); // Index
+
+  if (Parens.consumeClose()) {
+    return ExprError();
+  }
+
+  SourceLocation EndLoc = Parens.getCloseLocation();
+
+  MoSeqTy = Ty.get();
+
+  ExprRange.setEnd(EndLoc);
+
+  return Actions.ActOnReflexprElementExpression(MoSeqTy, OpLoc, EndLoc);
 }
 // Mirror
 

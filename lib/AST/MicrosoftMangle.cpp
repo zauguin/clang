@@ -2292,11 +2292,23 @@ void MicrosoftCXXNameMangler::mangleType(const TypeOfExprType *T, Qualifiers,
     << Range;
 }
 
+// Mirror
 void MicrosoftCXXNameMangler::mangleType(const ReflexprType *T, Qualifiers,
                                          SourceRange Range) {
   DiagnosticsEngine &Diags = Context.getDiags();
   unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
-    "cannot mangle this deflexpr() yet");
+    "cannot mangle this reflexpr() yet");
+  Diags.Report(Range.getBegin(), DiagID)
+    << Range;
+}
+
+// Mirror
+void MicrosoftCXXNameMangler::mangleType(const ReflexprElementType *T,
+                                         Qualifiers,
+                                         SourceRange Range) {
+  DiagnosticsEngine &Diags = Context.getDiags();
+  unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
+    "cannot mangle this __reflexpr_element() yet");
   Diags.Report(Range.getBegin(), DiagID)
     << Range;
 }

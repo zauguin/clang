@@ -1695,7 +1695,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
       break;
 
     case Type::Typedef:
-    case Type::Reflexpr: // Mirror TODO
+    case Type::Reflexpr: // Mirror TODO check if this is correct
+    case Type::ReflexprElement: // Mirror
     case Type::Decltype:
     case Type::Auto:
       // Stop walking: nothing to do.

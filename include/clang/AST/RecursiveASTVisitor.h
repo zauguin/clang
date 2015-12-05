@@ -966,6 +966,9 @@ DEF_TRAVERSE_TYPE(TypeOfType, { TRY_TO(TraverseType(T->getUnderlyingType())); })
 // Mirror
 DEF_TRAVERSE_TYPE(ReflexprType,
                   { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
+// Mirror
+DEF_TRAVERSE_TYPE(ReflexprElementType,
+                  { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
 
 DEF_TRAVERSE_TYPE(DecltypeType,
                   { TRY_TO(TraverseStmt(T->getUnderlyingExpr())); })
@@ -1185,6 +1188,11 @@ DEF_TRAVERSE_TYPELOC(TypeOfType, {
 
 // Mirror
 DEF_TRAVERSE_TYPELOC(ReflexprType, {
+  TRY_TO(TraverseStmt(TL.getTypePtr()->getUnderlyingExpr()));
+})
+
+// Mirror
+DEF_TRAVERSE_TYPELOC(ReflexprElementType, {
   TRY_TO(TraverseStmt(TL.getTypePtr()->getUnderlyingExpr()));
 })
 
@@ -2157,6 +2165,17 @@ DEF_TRAVERSE_STMT(ReflexprOperandExpr, {
   // but not if it's a type.
   if (S->isType())
     TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
+})
+
+// Mirror
+DEF_TRAVERSE_STMT(ReflexprElementOperandExpr, {
+  // The child-iterator will pick up the arg if it's an expression,
+  // but not if it's a type.
+  
+/* Mirror TODO
+  if (S->isType())
+    TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
+*/
 })
 
 DEF_TRAVERSE_STMT(UnaryExprOrTypeTraitExpr, {

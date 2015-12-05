@@ -62,6 +62,7 @@ namespace clang {
     TST_typeofExpr,
     TST_decltype,         // C++11 decltype
     TST_reflexpr,         // Mirror reflexpr
+    TST_reflexprElement,  // Mirror __reflexpr_element
     TST_underlyingType,   // __underlying_type for C++11
     TST_auto,             // C++11 auto
     TST_decltype_auto,    // C++1y decltype(auto)

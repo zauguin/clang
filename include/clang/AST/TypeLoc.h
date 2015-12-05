@@ -1663,6 +1663,15 @@ public:
 };
 // Mirror
 
+// Mirror
+class ReflexprElementTypeLoc : public InheritingConcreteTypeLoc<TypeSpecTypeLoc,
+                                                         ReflexprElementTypeLoc,
+                                                         ReflexprElementType> {
+public:
+  Expr *getUnderlyingExpr() const { return getTypePtr()->getUnderlyingExpr(); }
+};
+// Mirror
+
 
 // FIXME: location of the 'decltype' and parens.
 class DecltypeTypeLoc : public InheritingConcreteTypeLoc<TypeSpecTypeLoc,

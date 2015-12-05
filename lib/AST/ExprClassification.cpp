@@ -149,6 +149,7 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
   case Expr::CXXBoolLiteralExprClass:
   case Expr::CXXPseudoDestructorExprClass:
   case Expr::ReflexprOperandExprClass: // Mirror
+  case Expr::ReflexprElementOperandExprClass: // Mirror
   case Expr::UnaryExprOrTypeTraitExprClass:
   case Expr::CXXNewExprClass:
   case Expr::CXXThisExprClass:

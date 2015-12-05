@@ -2088,6 +2088,10 @@ static QualType UnwrapTypeForDebugInfo(QualType T, const ASTContext &C) {
     case Type::Reflexpr:
       T = cast<ReflexprType>(T)->getReflectedType();
       break;
+    // Mirror
+    case Type::ReflexprElement:
+      T = cast<ReflexprElementType>(T)->getMetaobjectSequenceType();
+      break;
     case Type::Decltype:
       T = cast<DecltypeType>(T)->getUnderlyingType();
       break;
@@ -2267,6 +2271,7 @@ llvm::DIType *CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile *Unit) {
   case Type::TypeOfExpr:
   case Type::TypeOf:
   case Type::Reflexpr: // Mirror
+  case Type::ReflexprElement: // Mirror
   case Type::Decltype:
   case Type::UnaryTransform:
   case Type::PackExpansion:

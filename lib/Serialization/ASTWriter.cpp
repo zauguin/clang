@@ -265,10 +265,18 @@ void ASTTypeWriter::VisitTypeOfType(const TypeOfType *T) {
   Code = TYPE_TYPEOF;
 }
 
+// Mirror
 void ASTTypeWriter::VisitReflexprType(const ReflexprType *T) {
   Writer.AddTypeRef(T->getReflectedType(), Record);
   Writer.AddStmt(T->getUnderlyingExpr());
   Code = TYPE_REFLEXPR;
+}
+
+// Mirror
+void ASTTypeWriter::VisitReflexprElementType(const ReflexprElementType *T) {
+  Writer.AddTypeRef(T->getMetaobjectSequenceType(), Record);
+  Writer.AddStmt(T->getUnderlyingExpr());
+  Code = TYPE_REFLEXPR_ELEMENT;
 }
 
 void ASTTypeWriter::VisitDecltypeType(const DecltypeType *T) {
@@ -571,10 +579,16 @@ void TypeLocWriter::VisitTypeOfTypeLoc(TypeOfTypeLoc TL) {
   Writer.AddSourceLocation(TL.getRParenLoc(), Record);
   Writer.AddTypeSourceInfo(TL.getUnderlyingTInfo(), Record);
 }
+
 // Mirror
 void TypeLocWriter::VisitReflexprTypeLoc(ReflexprTypeLoc TL) {
   Writer.AddSourceLocation(TL.getNameLoc(), Record);
 }
+// Mirror
+void TypeLocWriter::VisitReflexprElementTypeLoc(ReflexprElementTypeLoc TL) {
+  Writer.AddSourceLocation(TL.getNameLoc(), Record);
+}
+
 void TypeLocWriter::VisitDecltypeTypeLoc(DecltypeTypeLoc TL) {
   Writer.AddSourceLocation(TL.getNameLoc(), Record);
 }

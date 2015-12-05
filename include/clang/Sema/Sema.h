@@ -1431,6 +1431,9 @@ public:
   // Mirror
   QualType BuildReflexprType(Expr *E, SourceLocation Loc);
 
+  // Mirror
+  QualType BuildReflexprElementType(Expr *E, SourceLocation Loc);
+
   /// If AsUnevaluated is false, E is treated as though it were an evaluated
   /// context, such as when building a type for decltype(auto).
   QualType BuildDecltypeType(Expr *E, SourceLocation Loc,
@@ -4846,6 +4849,10 @@ public:
                                    bool *IsCorrectedToColon = nullptr);
 
   // Mirror
+  ExprResult CreateReflexprOperandExpr(const NamedDecl* n_decl,
+                                       SourceLocation OpLoc,
+                                       SourceRange R);
+
   ExprResult CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
                                        SourceLocation OpLoc,
                                        SourceRange R);
@@ -4857,6 +4864,11 @@ public:
                                        SourceLocation OpLoc,
                                        SourceRange R);
   // Mirror
+  ExprResult CreateReflexprElementOperandExpr(TypeSourceInfo *TInfo,
+                                              SourceLocation OpLoc,
+                                              SourceRange R);
+
+  // Mirror
   bool isReflexprHeaderIncluded(SourceLocation);
 
   ExprResult ActOnReflexprExpression(SourceLocation OpLoc,
@@ -4864,9 +4876,21 @@ public:
 
   ExprResult ActOnReflexprExpression(SourceLocation OpLoc,
                                      SourceRange ArgRange,
+                                     Scope* S,
+                                     CXXScopeSpec& SS,
+                                     const IdentifierInfo& Ident);
+
+  ExprResult ActOnReflexprExpression(SourceLocation OpLoc,
+                                     SourceRange ArgRange,
                                      ParsedType& ExprTy);
 
   ExprResult ActOnReflexprExpression(Expr *E);
+
+  ExprResult ActOnReflexprElementExpression(ParsedType& MoSeqTy,
+                                            SourceLocation Loc,
+                                            SourceLocation EndLoc);
+
+  ExprResult ActOnReflexprElementExpression(Expr *E);
   // Mirror
 
   ExprResult ActOnDecltypeExpression(Expr *E);

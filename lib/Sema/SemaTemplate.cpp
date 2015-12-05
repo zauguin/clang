@@ -4056,6 +4056,13 @@ bool UnnamedLocalNoLinkageFinder::VisitReflexprType(const ReflexprType*) {
 }
 // Mirror
 
+// Mirror
+bool UnnamedLocalNoLinkageFinder::VisitReflexprElementType(
+      const ReflexprElementType*) {
+  return false;
+}
+// Mirror
+
 bool UnnamedLocalNoLinkageFinder::VisitDecltypeType(const DecltypeType*) {
   return false;
 }
