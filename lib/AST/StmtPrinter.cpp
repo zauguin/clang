@@ -1248,8 +1248,8 @@ void StmtPrinter::VisitOffsetOfExpr(OffsetOfExpr *Node) {
   OS << ")";
 }
 
-// Mirror TODO
-void StmtPrinter::VisitReflexprOperandExpr(ReflexprOperandExpr *Node){
+// Mirror
+void StmtPrinter::VisitReflexprExpr(ReflexprExpr *Node){
   if (Node->isType()) {
     OS << '(';
     Node->getType().print(OS, Policy);
@@ -1261,11 +1261,18 @@ void StmtPrinter::VisitReflexprOperandExpr(ReflexprOperandExpr *Node){
 }
 // Mirror
 
-// Mirror TODO
-void StmtPrinter::VisitReflexprElementOperandExpr(
-       ReflexprElementOperandExpr *Node) {
+// Mirror
+void StmtPrinter::VisitReflexprSizeExpr(ReflexprSizeExpr *Node) {
   OS << '(';
-  Node->getType().print(OS, Policy);
+  Node->getMoSeqType().print(OS, Policy);
+  OS << ')';
+}
+// Mirror
+
+// Mirror TODO
+void StmtPrinter::VisitReflexprElementExpr(ReflexprElementExpr *Node) {
+  OS << '(';
+  Node->getMoSeqType().print(OS, Policy);
   OS << ')';
 }
 // Mirror

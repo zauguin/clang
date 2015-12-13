@@ -1331,7 +1331,8 @@ public:
   // Mirror
   enum MetaobjectSequenceKind {
     MoSK_None = 0,
-    MoSK_ClassDataMembers,
+    MoSK_PubClassDataMembers,
+    MoSK_AllClassDataMembers,
     MoSK_EnumMembers
   };
   void addMetaobjectSequence(CXXRecordDecl* mo_decl,
@@ -1345,9 +1346,26 @@ public:
   std::string makeMetaNamespaceName(const NamedDecl* ns_decl);
   // Mirror
   std::string makeMetaTypeName(QualType type);
+  // Mirror
+  std::string makeMetaVariableName(const ValueDecl* var_decl);
 
   // Mirror
   CXXRecordDecl* lookupPrevMetaobjectDecl(IdentifierInfo& mo_ident);
+
+  // Mirror
+  QualType lookupMoMemberTypedefType(const CXXRecordDecl* mo_decl,
+                                     IdentifierInfo& ident);
+
+  // Mirror
+  const CXXRecordDecl* lookupMoMemberMetaobjectDecl(const CXXRecordDecl* mo_dcl,
+                                                    IdentifierInfo& ident);
+  // Mirror
+  const VarDecl* lookupMoMemberVariableDecl(const CXXRecordDecl* mo_decl,
+                                            IdentifierInfo& ident);
+
+  // Mirror
+  MetaobjectSequenceKind
+  lookupMetaobjectSequenceKind(const CXXRecordDecl* mos_decl);
 
   // Mirror
   CXXRecordDecl* createNewMetaobjectDecl(DeclContext* decl_ctxt,
@@ -1362,6 +1380,9 @@ public:
   QualType finalizeMetaobject(CXXRecordDecl* mo_decl);
 
   // Mirror
+  const CXXRecordDecl* unwrapMetaobjectDecl(QualType MoType);
+
+  // Mirror
   QualType getMetaSpecifier(const StringRef& spec_kw);
 
   // Mirror
@@ -1374,10 +1395,31 @@ public:
   QualType getMetaType(QualType ReflectedType);
 
   // Mirror
-  QualType getMetaobject(Expr* e, QualType ReflectedType);
+  QualType getMetaVariable(const ValueDecl* var_decl);
 
   // Mirror
-  QualType getReflexprType(ReflexprOperandExpr *e);
+  unsigned getMetaClassMemberCount(const RecordDecl* rec_decl,
+                                   MetaobjectSequenceKind seq_kind);
+  // Mirror
+  unsigned getMetaClassSequenceSize(const CXXRecordDecl* mc_decl,
+                                    MetaobjectSequenceKind seq_kind);
+  // Mirror
+  unsigned getMetaobjectSequenceSize(QualType MoSeqType);
+
+  // Mirror
+  QualType getMetaClassMemberElement(const RecordDecl* rec_decl,
+                                     MetaobjectSequenceKind seq_kind,
+                                     unsigned index);
+
+  // Mirror
+  QualType getMetaClassElementType(const CXXRecordDecl* mc_decl,
+                                   MetaobjectSequenceKind seq_kind,
+                                   unsigned index);
+  // Mirror
+  QualType getMoSeqElementType(QualType MoSeqType, unsigned Index);
+
+  // Mirror
+  QualType getReflexprType(ReflexprExpr *e);
   QualType getReflexprType(Expr *e, QualType);
   // Mirror
   QualType getReflexprElementType(Expr *e);

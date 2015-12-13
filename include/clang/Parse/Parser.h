@@ -1431,6 +1431,11 @@ private:
                                     SourceRange &ExprRange);
 
   // Mirror
+  ExprResult ParseExprAfterReflexprSize(const Token& OpTok,
+                                        ParsedType &ExprType,
+                                        SourceRange &ExprRange);
+
+  // Mirror
   ExprResult ParseExprAfterReflexprElement(const Token& OpTok,
                                            ParsedType &ExprType,
                                            SourceRange &ExprRange);
@@ -2236,6 +2241,7 @@ private:
   // Mirror
   ExprResult ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc);
   ExprResult ParseReflexprElementSpecifier(DeclSpec &DS, SourceLocation* Loc);
+  ExprResult ParseReflexprSizeExpression(SourceLocation* Loc);
 
   void ParseTypeofSpecifier(DeclSpec &DS);
   SourceLocation ParseDecltypeSpecifier(DeclSpec &DS);

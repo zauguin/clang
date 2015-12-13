@@ -13,7 +13,7 @@ int main(void)
 	static_assert(!meta::is_alias_v<meta_unsigned>, "");
 
 	static_assert(is_same<
-		meta::get_type_t<meta_unsigned>,
+		meta::get_reflected_type_t<meta_unsigned>,
 		unsigned
 	>::value, "");
 

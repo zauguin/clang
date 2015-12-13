@@ -6053,6 +6053,10 @@ public:
   bool VisitCastExpr(const CastExpr* E);
   bool VisitUnaryExprOrTypeTraitExpr(const UnaryExprOrTypeTraitExpr *E);
 
+  // Mirror
+  bool VisitReflexprSizeExpr(const ReflexprSizeExpr *E);
+  // Mirror
+
   bool VisitCXXBoolLiteralExpr(const CXXBoolLiteralExpr *E) {
     return Success(E->getValue(), E);
   }
@@ -7539,6 +7543,14 @@ bool IntExprEvaluator::VisitUnaryExprOrTypeTraitExpr(
   llvm_unreachable("unknown expr/type trait");
 }
 
+// Mirror
+bool IntExprEvaluator::VisitReflexprSizeExpr(const ReflexprSizeExpr *E) {
+
+  assert(E != nullptr);
+  return Success(Info.Ctx.getMetaobjectSequenceSize(E->getMoSeqType()), E);
+}
+// Mirror
+
 bool IntExprEvaluator::VisitOffsetOfExpr(const OffsetOfExpr *OOE) {
   CharUnits Result;
   unsigned n = OOE->getNumComponents();
@@ -8625,7 +8637,12 @@ static bool Evaluate(APValue &Result, EvalInfo &Info, const Expr *E) {
   // In C, function designators are not lvalues, but we evaluate them as if they
   // are.
   QualType T = E->getType();
-  if (E->isGLValue() || T->isFunctionType()) {
+
+  // Mirror
+  if(E->getStmtClass() == Expr::ReflexprSizeExprClass && T->isMetaobjectType()){
+    if (!IntExprEvaluator(Info, Result).Visit(E))
+      return false;
+  } else if (E->isGLValue() || T->isFunctionType()) {
     LValue LV;
     if (!EvaluateLValue(E, LV, Info))
       return false;
@@ -9037,10 +9054,13 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
     // GCC considers the GNU __null value to be an integral constant expression.
     return NoDiag();
 
-  case Expr::ReflexprOperandExprClass: // Mirror
+  case Expr::ReflexprExprClass: // Mirror
     return NoDiag();
 
-  case Expr::ReflexprElementOperandExprClass: // Mirror
+  case Expr::ReflexprSizeExprClass: // Mirror
+    return NoDiag();
+
+  case Expr::ReflexprElementExprClass: // Mirror
     return NoDiag();
 
   case Expr::SubstNonTypeTemplateParmExprClass:

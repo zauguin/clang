@@ -2926,15 +2926,20 @@ void DependentReflexprType::Profile(llvm::FoldingSetNodeID &ID,
 
 // Mirror
 ReflexprElementType::ReflexprElementType(Expr *e,
-                                         QualType moSeqType,
-                                         QualType elemType)
-  : Type(Reflexpr, elemType, e->isInstantiationDependent(),
+                                         QualType elemMoType,
+                                         QualType moSeqType)
+  : Type(ReflexprElement, elemMoType, e->isInstantiationDependent(),
          e->isInstantiationDependent(),
          false, // ! isVariablyModified
          e->containsUnexpandedParameterPack()),
     E(e),
-  MoSeqType(moSeqType),
-  ElemType(elemType) {
+  ElemMoType(elemMoType),
+  MoSeqType(moSeqType) {
+}
+
+ReflexprElementExpr*
+ReflexprElementType::getElementExpr() const {
+  return dyn_cast<ReflexprElementExpr>(E);
 }
 
 bool ReflexprElementType::isSugared() const {
@@ -2943,7 +2948,7 @@ bool ReflexprElementType::isSugared() const {
 
 QualType ReflexprElementType::desugar() const {
   if (isSugared())
-    return getElementType();
+    return getElementMetaobjectType();
   
   return QualType(this, 0);
 }

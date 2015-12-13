@@ -662,7 +662,7 @@ void StmtProfiler::VisitOffsetOfExpr(const OffsetOfExpr *S) {
 
 // Mirror
 void
-StmtProfiler::VisitReflexprOperandExpr(const ReflexprOperandExpr *S) {
+StmtProfiler::VisitReflexprExpr(const ReflexprExpr *S) {
   VisitExpr(S);
   if (S->isType())
     VisitType(S->getType());
@@ -671,10 +671,18 @@ StmtProfiler::VisitReflexprOperandExpr(const ReflexprOperandExpr *S) {
 
 // Mirror
 void
-StmtProfiler::VisitReflexprElementOperandExpr(
-  const ReflexprElementOperandExpr *S) {
+StmtProfiler::VisitReflexprSizeExpr(const ReflexprSizeExpr *S) {
   VisitExpr(S);
-  VisitType(S->getType());
+  VisitType(S->getMoSeqType());
+}
+// Mirror
+
+// Mirror
+void
+StmtProfiler::VisitReflexprElementExpr(const ReflexprElementExpr *S) {
+  VisitExpr(S);
+  VisitType(S->getMoSeqType());
+  VisitExpr(S->getIdxExpr());
 }
 // Mirror
 

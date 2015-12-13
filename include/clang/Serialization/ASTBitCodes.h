@@ -1222,6 +1222,8 @@ namespace clang {
       // Mirror
       EXPR_REFLEXPR_OP,
       // Mirror
+      EXPR_REFLEXPR_SIZE_OP,
+      // Mirror
       EXPR_REFLEXPR_ELEMENT_OP,
       /// \brief A SizefAlignOfExpr record.
       EXPR_SIZEOF_ALIGN_OF,

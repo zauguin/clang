@@ -3345,6 +3345,15 @@ public:
     return cast_or_null<RecordDecl>(TagDecl::getDefinition());
   }
 
+  // Mirror
+  typedef llvm::iterator_range<decl_iterator> decl_range;
+  decl_range decls() const { return decl_range(decl_begin(), decl_end()); }
+  decl_iterator decl_begin() const;
+
+  decl_iterator decl_end() const {
+    return decl_iterator(decl_iterator());
+  }
+
   // Iterator access to field members. The field iterator only visits
   // the non-static data members of this class, ignoring any static
   // data members, functions, constructors, destructors, etc.

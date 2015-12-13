@@ -760,6 +760,11 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
   }
 
   // Mirror
+  case tok::kw___reflexpr_size: {
+    return ParseReflexprSizeExpression(nullptr);
+  }
+
+  // Mirror
   case tok::kw___reflexpr_element: {
     DeclSpec DS(AttrFactory);
     return ParseReflexprElementSpecifier(DS, nullptr);
@@ -1089,6 +1094,8 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
   // unary-expression: '__builtin_omp_required_simd_align' '(' type-name ')'
   case tok::kw___builtin_omp_required_simd_align:
     return ParseUnaryExprOrTypeTraitExpression();
+
+
   case tok::ampamp: {      // unary-expression: '&&' identifier
     SourceLocation AmpAmpLoc = ConsumeToken();
     if (Tok.isNot(tok::identifier))
@@ -1753,6 +1760,46 @@ Parser::ParseExprAfterReflexpr(const Token &OpTok,
 
 // Mirror
 ExprResult
+Parser::ParseExprAfterReflexprSize(const Token& OpTok,
+                                   ParsedType& MoSeqTy,
+                                   SourceRange& ExprRange){
+
+  assert(OpTok.is(tok::kw___reflexpr_size) &&
+         "Not a __reflexpr_size expression!");
+
+  // TODO better diagnostic
+
+  SourceLocation OpLoc = OpTok.getLocation();
+
+  BalancedDelimiterTracker Parens(*this, tok::l_paren);
+  if (Parens.expectAndConsume())
+    return ExprError();
+
+  ExprRange.setBegin(Parens.getOpenLocation());
+
+  TypeResult Ty = ParseTypeName();
+
+  if (Ty.isInvalid()) {
+    Parens.skipToEnd();
+    return ExprError();
+  }
+
+  if (Parens.consumeClose()) {
+    return ExprError();
+  }
+
+  SourceLocation EndLoc = Parens.getCloseLocation();
+
+  MoSeqTy = Ty.get();
+
+  ExprRange.setEnd(EndLoc);
+
+  return Actions.ActOnReflexprSizeExpression(MoSeqTy, OpLoc, EndLoc);
+}
+// Mirror
+
+// Mirror
+ExprResult
 Parser::ParseExprAfterReflexprElement(const Token& OpTok,
                                       ParsedType& MoSeqTy,
                                       SourceRange& ExprRange){
@@ -1781,10 +1828,15 @@ Parser::ParseExprAfterReflexprElement(const Token& OpTok,
     return ExprError();
   }
 
-  ConsumeToken(); // '('
+  ConsumeToken(); // ','
 
-  // TODO: Properly parse and act on Index
-  ConsumeToken(); // Index
+  // Parse the index expression
+  TypeCastState isTypeCast = NotTypeCast;
+  ExprResult IdxExpr = ParseCastExpression(false, false, isTypeCast);
+
+  if (IdxExpr.isInvalid()) {
+    return ExprError();
+  }
 
   if (Parens.consumeClose()) {
     return ExprError();
@@ -1796,7 +1848,8 @@ Parser::ParseExprAfterReflexprElement(const Token& OpTok,
 
   ExprRange.setEnd(EndLoc);
 
-  return Actions.ActOnReflexprElementExpression(MoSeqTy, OpLoc, EndLoc);
+  return Actions.ActOnReflexprElementExpression(MoSeqTy, IdxExpr.get(),
+                                                OpLoc, EndLoc);
 }
 // Mirror
 

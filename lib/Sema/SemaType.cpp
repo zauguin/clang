@@ -6913,8 +6913,8 @@ QualType Sema::BuildReflexprType(Expr *E, SourceLocation Loc) {
     Diag(E->getExprLoc(), diag::warn_side_effects_unevaluated_context);
   }
 
-  if (ReflexprOperandExpr *REOE = dyn_cast<ReflexprOperandExpr>(E)) {
-    return Context.getReflexprType(REOE);
+  if (ReflexprExpr *REE = dyn_cast<ReflexprExpr>(E)) {
+    return Context.getReflexprType(REE);
   } else {
     return Context.getReflexprType(E, getDecltypeForExpr(*this, E));
   }

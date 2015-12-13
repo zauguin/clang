@@ -510,7 +510,7 @@ void ASTStmtWriter::VisitOffsetOfExpr(OffsetOfExpr *E) {
 }
 
 // Mirror
-void ASTStmtWriter::VisitReflexprOperandExpr(ReflexprOperandExpr *E) {
+void ASTStmtWriter::VisitReflexprExpr(ReflexprExpr *E) {
   VisitExpr(E);
   if (E->isType())
     Writer.AddTypeSourceInfo(E->getTypeInfo(), Record);
@@ -525,8 +525,18 @@ void ASTStmtWriter::VisitReflexprOperandExpr(ReflexprOperandExpr *E) {
 // Mirror
 
 // Mirror
-void ASTStmtWriter::VisitReflexprElementOperandExpr(
-       ReflexprElementOperandExpr *E) {
+void ASTStmtWriter::VisitReflexprSizeExpr(ReflexprSizeExpr *E) {
+  VisitExpr(E);
+  Writer.AddTypeSourceInfo(E->getTypeInfo(), Record);
+  // TODO
+  Writer.AddSourceLocation(E->getOperatorLoc(), Record);
+  Writer.AddSourceLocation(E->getRParenLoc(), Record);
+  Code = serialization::EXPR_REFLEXPR_SIZE_OP;
+}
+// Mirror
+
+// Mirror
+void ASTStmtWriter::VisitReflexprElementExpr(ReflexprElementExpr *E) {
   VisitExpr(E);
   Writer.AddTypeSourceInfo(E->getTypeInfo(), Record);
   // TODO

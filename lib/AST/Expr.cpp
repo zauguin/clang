@@ -1347,69 +1347,69 @@ IdentifierInfo *OffsetOfExpr::OffsetOfNode::getFieldName() const {
 }
 
 // Mirror
-ReflexprOperandExpr::ReflexprOperandExpr(SourceLocation op, SourceLocation rp)
-    : Expr(ReflexprOperandExprClass, QualType(), VK_RValue, OK_Ordinary,
+ReflexprExpr::ReflexprExpr(SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprExprClass, QualType(), VK_RValue, OK_Ordinary,
            false,
            false, false,
            false),
       OpLoc(op), RParenLoc(rp) {
-  ReflexprOperandExprBits.IsType = false;
-  ReflexprOperandExprBits.IsNamedDecl = false;
+  ReflexprExprBits.IsType = false;
+  ReflexprExprBits.IsNamedDecl = false;
   Argument.Ex = nullptr;
 }
 // Mirror
 
 // Mirror
-ReflexprOperandExpr::ReflexprOperandExpr(const NamedDecl* Named,
+ReflexprExpr::ReflexprExpr(const NamedDecl* Named,
     SourceLocation op, SourceLocation rp)
-    : Expr(ReflexprOperandExprClass, QualType(), VK_RValue, OK_Ordinary,
+    : Expr(ReflexprExprClass, QualType(), VK_RValue, OK_Ordinary,
          false, // Never type-dependent (C++ [temp.dep.expr]p3).
          false, // Not value dependent
          false, // Not instantiation dependent
          false), // TODO: Doesn't contain unexpanded 
     OpLoc(op), RParenLoc(rp) {
-  ReflexprOperandExprBits.IsType = false;
-  ReflexprOperandExprBits.IsNamedDecl = true;
+  ReflexprExprBits.IsType = false;
+  ReflexprExprBits.IsNamedDecl = true;
   Argument.Nd = Named;
 }          
 // Mirror
 
 // Mirror
-ReflexprOperandExpr::ReflexprOperandExpr(TypeSourceInfo *TInfo,
+ReflexprExpr::ReflexprExpr(TypeSourceInfo *TInfo,
     QualType argType, SourceLocation op, SourceLocation rp)
-    : Expr(ReflexprOperandExprClass, argType, VK_RValue, OK_Ordinary,
+    : Expr(ReflexprExprClass, argType, VK_RValue, OK_Ordinary,
          false, // Never type-dependent (C++ [temp.dep.expr]p3).
          // Value-dependent if the argument is type-dependent.
          TInfo->getType()->isDependentType(),
          TInfo->getType()->isInstantiationDependentType(),
          TInfo->getType()->containsUnexpandedParameterPack()),
     OpLoc(op), RParenLoc(rp) {
-  ReflexprOperandExprBits.IsType = true;
-  ReflexprOperandExprBits.IsNamedDecl = false;
+  ReflexprExprBits.IsType = true;
+  ReflexprExprBits.IsNamedDecl = false;
   Argument.Ty = TInfo;
 }          
 // Mirror
 
 // Mirror
-ReflexprOperandExpr::ReflexprOperandExpr(
+ReflexprExpr::ReflexprExpr(
     Expr *E, QualType resultType,
     SourceLocation op, SourceLocation rp)
-    : Expr(ReflexprOperandExprClass, resultType, VK_RValue, OK_Ordinary,
+    : Expr(ReflexprExprClass, resultType, VK_RValue, OK_Ordinary,
            false, // Never type-dependent (C++ [temp.dep.expr]p3).
            // Value-dependent if the argument is type-dependent.
            E->isTypeDependent(), E->isInstantiationDependent(),
            E->containsUnexpandedParameterPack()),
       OpLoc(op), RParenLoc(rp) {
-  ReflexprOperandExprBits.IsType = false;
-  ReflexprOperandExprBits.IsNamedDecl = false;
+  ReflexprExprBits.IsType = false;
+  ReflexprExprBits.IsNamedDecl = false;
   Argument.Ex = E;
 }
 // Mirror
 
 // Mirror
-ReflexprElementOperandExpr::ReflexprElementOperandExpr(TypeSourceInfo *TInfo,
-    QualType MoSeqT, SourceLocation op, SourceLocation rp)
-    : Expr(ReflexprElementOperandExprClass, MoSeqT, VK_RValue, OK_Ordinary,
+ReflexprSizeExpr::ReflexprSizeExpr(TypeSourceInfo *TInfo,
+    QualType SizeT, SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprSizeExprClass, SizeT, VK_RValue, OK_Ordinary,
          TInfo->getType()->isDependentType(),
          // Value-dependent if the argument is type-dependent.
          TInfo->getType()->isDependentType(),
@@ -1417,6 +1417,21 @@ ReflexprElementOperandExpr::ReflexprElementOperandExpr(TypeSourceInfo *TInfo,
          TInfo->getType()->containsUnexpandedParameterPack()),
     OpLoc(op), RParenLoc(rp) {
   MoSeqTy = TInfo;
+}          
+// Mirror
+
+// Mirror
+ReflexprElementExpr::ReflexprElementExpr(TypeSourceInfo *TInfo,
+    QualType ResultT, Expr* idxExpr, SourceLocation op, SourceLocation rp)
+    : Expr(ReflexprElementExprClass, ResultT, VK_RValue, OK_Ordinary,
+         TInfo->getType()->isDependentType(),
+         // Value-dependent if the argument is type-dependent.
+         TInfo->getType()->isDependentType(),
+         TInfo->getType()->isInstantiationDependentType(),
+         TInfo->getType()->containsUnexpandedParameterPack()),
+    OpLoc(op), RParenLoc(rp) {
+  MoSeqTy = TInfo;
+  IdxExpr = idxExpr;
 }          
 // Mirror
 
@@ -3035,8 +3050,9 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
   case CharacterLiteralClass:
   case OffsetOfExprClass:
   case ImplicitValueInitExprClass:
-  case ReflexprOperandExprClass: // Mirror
-  case ReflexprElementOperandExprClass: // Mirror
+  case ReflexprExprClass: // Mirror
+  case ReflexprSizeExprClass: // Mirror
+  case ReflexprElementExprClass: // Mirror
   case UnaryExprOrTypeTraitExprClass:
   case AddrLabelExprClass:
   case GNUNullExprClass:
@@ -3981,8 +3997,8 @@ PseudoObjectExpr::PseudoObjectExpr(QualType type, ExprValueKind VK,
 //  Child Iterators for iterating over subexpressions/substatements
 //===----------------------------------------------------------------------===//
 
-// ReflexprOperandExpr
-Stmt::child_range ReflexprOperandExpr::children() {
+// ReflexprExpr
+Stmt::child_range ReflexprExpr::children() {
   // If this is of a type and the type is a VLA type (and not a typedef), the
   // size expression of the VLA needs to be treated as an executable expression.
   // Why isn't this weirdness documented better in StmtIterator?
@@ -3995,8 +4011,14 @@ Stmt::child_range ReflexprOperandExpr::children() {
   return child_range(&Argument.Ex, &Argument.Ex + 1);
 }
 
-// ReflexprElementOperandExpr
-Stmt::child_range ReflexprElementOperandExpr::children() {
+// ReflexprSizeExpr
+Stmt::child_range ReflexprSizeExpr::children() {
+  // Mirror TODO
+  return child_range(child_iterator(), child_iterator());
+}
+
+// ReflexprElementExpr
+Stmt::child_range ReflexprElementExpr::children() {
   // Mirror TODO
   return child_range(child_iterator(), child_iterator());
 }

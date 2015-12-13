@@ -3471,20 +3471,23 @@ public:
                       Expr *E);
 };
 
+class ReflexprElementExpr;
+
 // Mirror
 class ReflexprElementType : public Type {
   Expr *E;
+  QualType ElemMoType;
   QualType MoSeqType;
-  QualType ElemType;
 
 protected:
-  ReflexprElementType(Expr* E, QualType moSeqType, QualType elemType);
+  ReflexprElementType(Expr* E, QualType elemMoType, QualType moSeqType);
   friend class ASTContext;
 
 public:
   Expr *getUnderlyingExpr() const { return E; }
+  ReflexprElementExpr* getElementExpr() const;
+  QualType getElementMetaobjectType() const { return ElemMoType; }
   QualType getMetaobjectSequenceType() const { return MoSeqType; }
-  QualType getElementType() const { return ElemType; }
 
   QualType desugar() const;
 

@@ -327,6 +327,8 @@ def err_unexpected_scope_on_base_reflexpr : Error<
   "unexpected namespace scope prior to reflexpr">;
 def err_failed_to_parse_reflexpr_element : Error<
   "failed to parse __reflexpr_element">;
+def err_failed_to_parse_reflexpr_size : Error<
+  "failed to parse __reflexpr_size">;
 def err_expected_class_name : Error<"expected class name">;
 def err_expected_class_name_not_template : 
   Error<"'typename' is redundant; base classes are implicitly types">;

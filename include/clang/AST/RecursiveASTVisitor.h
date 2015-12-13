@@ -2160,7 +2160,7 @@ DEF_TRAVERSE_STMT(OffsetOfExpr, {
 })
 
 // Mirror
-DEF_TRAVERSE_STMT(ReflexprOperandExpr, {
+DEF_TRAVERSE_STMT(ReflexprExpr, {
   // The child-iterator will pick up the arg if it's an expression,
   // but not if it's a type.
   if (S->isType())
@@ -2168,7 +2168,15 @@ DEF_TRAVERSE_STMT(ReflexprOperandExpr, {
 })
 
 // Mirror
-DEF_TRAVERSE_STMT(ReflexprElementOperandExpr, {
+DEF_TRAVERSE_STMT(ReflexprSizeExpr, {
+  // The child-iterator will pick up the arg if it's an expression,
+  // but not if it's a type.
+  
+  TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
+})
+
+// Mirror
+DEF_TRAVERSE_STMT(ReflexprElementExpr, {
   // The child-iterator will pick up the arg if it's an expression,
   // but not if it's a type.
   

@@ -3744,27 +3744,27 @@ bool Sema::CheckVecStepExpr(Expr *E) {
 
 // Mirror
 ExprResult
-Sema::CreateReflexprOperandExpr(SourceLocation OpLoc, SourceRange R) {
+Sema::CreateReflexprExpr(SourceLocation OpLoc, SourceRange R) {
 
-  return new (Context) ReflexprOperandExpr(OpLoc, R.getEnd());
+  return new (Context) ReflexprExpr(OpLoc, R.getEnd());
 }
 
 // Mirror
 ExprResult
-Sema::CreateReflexprOperandExpr(const NamedDecl* n_decl,
-                                SourceLocation OpLoc,
-                                SourceRange R) {
+Sema::CreateReflexprExpr(const NamedDecl* n_decl,
+                         SourceLocation OpLoc,
+                         SourceRange R) {
   if (!n_decl)
     return ExprError();
 
-  return new (Context) ReflexprOperandExpr(n_decl, OpLoc, R.getEnd());
+  return new (Context) ReflexprExpr(n_decl, OpLoc, R.getEnd());
 }
 
 // Mirror
 ExprResult
-Sema::CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
-                                SourceLocation OpLoc,
-                                SourceRange R) {
+Sema::CreateReflexprExpr(TypeSourceInfo *TInfo,
+                         SourceLocation OpLoc,
+                         SourceRange R) {
   if (!TInfo)
     return ExprError();
 
@@ -3777,14 +3777,14 @@ Sema::CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
   }
   */
 
-  return new (Context) ReflexprOperandExpr(TInfo, T, OpLoc, R.getEnd());
+  return new (Context) ReflexprExpr(TInfo, T, OpLoc, R.getEnd());
 }
 
 // Mirror
 ExprResult
-Sema::CreateReflexprOperandExpr(Expr* E,
-                                SourceLocation OpLoc,
-                                SourceRange R) {
+Sema::CreateReflexprExpr(Expr* E,
+                         SourceLocation OpLoc,
+                         SourceRange R) {
   ExprResult PE = CheckPlaceholderExpr(E);
   if (PE.isInvalid()) 
     return ExprError();
@@ -3804,21 +3804,33 @@ Sema::CreateReflexprOperandExpr(Expr* E,
     return ExprError();
 
   // Mirror TODO:
-  return new (Context) ReflexprOperandExpr(
+  return new (Context) ReflexprExpr(
       E, Context.getSizeType(), OpLoc, E->getSourceRange().getEnd());
 }
 
 // Mirror
 ExprResult
-Sema::CreateReflexprElementOperandExpr(TypeSourceInfo *TInfo,
-                                       SourceLocation OpLoc,
-                                       SourceRange R) {
+Sema::CreateReflexprSizeExpr(TypeSourceInfo *TInfo,
+                             SourceLocation OpLoc,
+                             SourceRange R) {
   if (!TInfo)
     return ExprError();
 
-  QualType T = TInfo->getType();
+  return new (Context) ReflexprSizeExpr(TInfo, Context.getSizeType(),
+                                        OpLoc, R.getEnd());
+}
+// Mirror
 
-  return new (Context) ReflexprElementOperandExpr(TInfo, T, OpLoc, R.getEnd());
+// Mirror
+ExprResult
+Sema::CreateReflexprElementExpr(TypeSourceInfo *TInfo, Expr* IdxExpr,
+                                SourceLocation OpLoc,
+                                SourceRange R) {
+  if (!TInfo)
+    return ExprError();
+
+  return new (Context) ReflexprElementExpr(TInfo, Context.getSizeType(),
+                                           IdxExpr, OpLoc, R.getEnd());
 }
 // Mirror
 

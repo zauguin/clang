@@ -254,8 +254,9 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
   case Stmt::PredefinedExprClass:
   case Stmt::ShuffleVectorExprClass:
   case Stmt::ConvertVectorExprClass:
-  case Stmt::ReflexprOperandExprClass: // Mirror
-  case Stmt::ReflexprElementOperandExprClass: // Mirror
+  case Stmt::ReflexprExprClass: // Mirror
+  case Stmt::ReflexprSizeExprClass: // Mirror
+  case Stmt::ReflexprElementExprClass: // Mirror
   case Stmt::UnaryExprOrTypeTraitExprClass:
   case Stmt::VAArgExprClass:
   case Stmt::ObjCArrayLiteralClass:

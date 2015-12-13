@@ -151,8 +151,8 @@ protected:
   };
 
   // Mirror
-  class ReflexprOperandExprBitfields {
-    friend class ReflexprOperandExpr;
+  class ReflexprExprBitfields {
+    friend class ReflexprExpr;
     unsigned : NumExprBits;
 
     unsigned IsNamedDecl : 1; // true if operand is namespace, variable, etc.
@@ -160,8 +160,14 @@ protected:
   };
 
   // Mirror
-  class ReflexprElementOperandExprBitfields {
-    friend class ReflexprElementOperandExpr;
+  class ReflexprSizeExprBitfields {
+    friend class ReflexprSizeExpr;
+    unsigned : NumExprBits;
+  };
+
+  // Mirror
+  class ReflexprElementExprBitfields {
+    friend class ReflexprElementExpr;
     unsigned : NumExprBits;
   };
 
@@ -263,8 +269,9 @@ protected:
     CharacterLiteralBitfields CharacterLiteralBits;
     FloatingLiteralBitfields FloatingLiteralBits;
     // Mirror
-    ReflexprOperandExprBitfields ReflexprOperandExprBits;
-    ReflexprElementOperandExprBitfields ReflexprElementOperandExprBits;
+    ReflexprExprBitfields ReflexprExprBits;
+    ReflexprSizeExprBitfields ReflexprSizeExprBits;
+    ReflexprElementExprBitfields ReflexprElementExprBits;
     // Mirror
 
     UnaryExprOrTypeTraitExprBitfields UnaryExprOrTypeTraitExprBits;

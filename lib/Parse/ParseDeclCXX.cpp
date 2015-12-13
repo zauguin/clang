@@ -854,7 +854,7 @@ ExprResult Parser::ParseReflexprSpecifier(DeclSpec &DS, SourceLocation* Loc ) {
 // Mirror
 /// ParseReflexprElementSpecifier - Parse the __reflexpr_element specifier.
 ///
-/// '__reflexpr_element' ( metaobject, element_kind, element_index )
+/// '__reflexpr_element' ( metaobjectsequence, element_index )
 ///
 ExprResult Parser::ParseReflexprElementSpecifier(DeclSpec &DS,
                                                  SourceLocation* Loc ) {
@@ -864,6 +864,7 @@ ExprResult Parser::ParseReflexprElementSpecifier(DeclSpec &DS,
   Token OpTok = Tok;
 
   ExprResult Result = ExprError();
+  SourceLocation StartLoc = Tok.getLocation();
 
   ConsumeToken(); // __reflexpr_element
 
@@ -874,12 +875,53 @@ ExprResult Parser::ParseReflexprElementSpecifier(DeclSpec &DS,
 
   if (Result.isInvalid()) {
       Diag(OpTok, diag::err_failed_to_parse_reflexpr_element);
+      DS.SetTypeSpecError();
+      return Result;
   }
 
   if (Loc) *Loc = ExprRange.getEnd();
 
-  // Mirror TODO act
+  const char *PrevSpec = nullptr;
+  unsigned DiagID;
+  const PrintingPolicy &Policy = Actions.getASTContext().getPrintingPolicy();
+  if (DS.SetTypeSpecType(DeclSpec::TST_reflexprElement, StartLoc, PrevSpec,
+                             DiagID, Result.get(), Policy)) {
+    Diag(StartLoc, DiagID) << PrevSpec;
+    DS.SetTypeSpecError();
+  }
 
+  return Result;
+}
+// Mirror
+
+// Mirror
+/// ParseReflexprSizeExpression  - Parse the __reflexpr_size specifier.
+///
+/// '__reflexpr_size' ( metaobjectsequence )
+///
+ExprResult Parser::ParseReflexprSizeExpression(SourceLocation* Loc ) {
+  assert(Tok.is(tok::kw___reflexpr_size)
+           && "Not a __reflexpr_size specifier");
+
+  Token OpTok = Tok;
+
+  ExprResult Result = ExprError();
+
+  ConsumeToken(); // __reflexpr_size
+
+  ParsedType MoSeqTy;
+  SourceRange ExprRange;
+
+  Result = ParseExprAfterReflexprSize(OpTok, MoSeqTy, ExprRange);
+
+  if (Result.isInvalid()) {
+      Diag(OpTok, diag::err_failed_to_parse_reflexpr_size);
+      return Result;
+  }
+
+  if (Loc) *Loc = ExprRange.getEnd();
+
+  // Mirror TODO
   return Result;
 }
 

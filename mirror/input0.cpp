@@ -1,10 +1,19 @@
-template <size_t I>
+#include "reflexpr_base.hpp"
+
+template <typename X>
 struct foo
 {
-	static constexpr size_t x = sizeof(I);
+	//static constexpr const unsigned value = sizeof(X);
+	static constexpr const unsigned value = __reflexpr_size(X);
+};
+
+struct bar
+{
+	int i;
+	static float f;
 };
 
 int main(void)
 {
-	return foo<int>::x?0:1;
+	return int(foo<reflexpr(bar)::_data_mems>::value);
 }

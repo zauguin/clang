@@ -523,7 +523,7 @@ template<>
 struct CanProxyAdaptor<ReflexprElementType>
     : public CanProxyBase<ReflexprElementType> {
   LLVM_CLANG_CANPROXY_SIMPLE_ACCESSOR(Expr *, getUnderlyingExpr)
-  LLVM_CLANG_CANPROXY_TYPE_ACCESSOR(getElementType)
+  LLVM_CLANG_CANPROXY_TYPE_ACCESSOR(getElementMetaobjectType)
 };
 
 template<>

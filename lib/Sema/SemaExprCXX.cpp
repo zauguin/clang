@@ -5516,7 +5516,7 @@ ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
     return ExprError();
   }
 
-  return CreateReflexprOperandExpr(OpLoc, ArgRange);
+  return CreateReflexprExpr(OpLoc, ArgRange);
 }
 // Mirror
 
@@ -5540,7 +5540,7 @@ ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
       if( isa<NamespaceDecl>(n_decl) ||
           isa<NamespaceAliasDecl>(n_decl)
       ) {
-        return CreateReflexprOperandExpr(n_decl, OpLoc, ArgRange);
+        return CreateReflexprExpr(n_decl, OpLoc, ArgRange);
       }
     }
   }
@@ -5560,7 +5560,7 @@ ExprResult Sema::ActOnReflexprExpression(SourceLocation OpLoc,
 
   TypeSourceInfo *TInfo;
   (void) GetTypeFromParser(ExprTy, &TInfo);
-  return CreateReflexprOperandExpr(TInfo, OpLoc, ArgRange);
+  return CreateReflexprExpr(TInfo, OpLoc, ArgRange);
 }
 // Mirror
 
@@ -5649,7 +5649,29 @@ ExprResult Sema::ActOnReflexprExpression(Expr *E) {
 // Mirror
 
 // Mirror
+ExprResult Sema::ActOnReflexprSizeExpression(ParsedType& MoSeqTy,
+                                             SourceLocation OpLoc,
+                                             SourceLocation EndLoc) {
+  TypeSourceInfo* MoSeqTI = nullptr;
+  QualType MoSeqT = GetTypeFromParser(MoSeqTy, &MoSeqTI);
+  MoSeqTI = Context.getTrivialTypeSourceInfo(MoSeqT, OpLoc);
+
+  // Mirror TODO: index
+  return CreateReflexprSizeExpr(MoSeqTI, OpLoc, EndLoc);
+}
+
+// Mirror
+ExprResult Sema::ActOnReflexprSizeExpression(Expr *E) {
+  assert(ExprEvalContexts.back().IsReflexpr && "not in a reflexpr expression");
+
+  // Mirror TODO
+  return E;
+}
+// Mirror
+
+// Mirror
 ExprResult Sema::ActOnReflexprElementExpression(ParsedType& MoSeqTy,
+                                                Expr* IdxExpr,
                                                 SourceLocation OpLoc,
                                                 SourceLocation EndLoc) {
   TypeSourceInfo* MoSeqTI = nullptr;
@@ -5657,7 +5679,7 @@ ExprResult Sema::ActOnReflexprElementExpression(ParsedType& MoSeqTy,
   MoSeqTI = Context.getTrivialTypeSourceInfo(MoSeqT, OpLoc);
 
   // Mirror TODO: index
-  return CreateReflexprElementOperandExpr(MoSeqTI, OpLoc, EndLoc);
+  return CreateReflexprElementExpr(MoSeqTI, IdxExpr, OpLoc, EndLoc);
 }
 
 // Mirror

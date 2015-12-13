@@ -712,9 +712,9 @@ VisitOffsetOfExpr(const OffsetOfExpr *OOE,
 
 // Mirror
 void ExprEngine::
-VisitReflexprOperandExpr(const ReflexprOperandExpr *Ex,
-                              ExplodedNode *Pred,
-                              ExplodedNodeSet &Dst) {
+VisitReflexprExpr(const ReflexprExpr *Ex,
+                  ExplodedNode *Pred,
+                  ExplodedNodeSet &Dst) {
 /* Mirror TODO
   ExplodedNodeSet CheckedSet;
   getCheckerManager().runCheckersForPreStmt(CheckedSet, Pred, Ex, *this);
@@ -758,9 +758,18 @@ VisitReflexprOperandExpr(const ReflexprOperandExpr *Ex,
 
 // Mirror
 void ExprEngine::
-VisitReflexprElementOperandExpr(const ReflexprElementOperandExpr *Ex,
-                                ExplodedNode *Pred,
-                                ExplodedNodeSet &Dst) {
+VisitReflexprSizeExpr(const ReflexprSizeExpr *Ex,
+                      ExplodedNode *Pred,
+                      ExplodedNodeSet &Dst) {
+  // Mirror TODO
+}
+// Mirror
+
+// Mirror
+void ExprEngine::
+VisitReflexprElementExpr(const ReflexprElementExpr *Ex,
+                         ExplodedNode *Pred,
+                         ExplodedNodeSet &Dst) {
   // Mirror TODO
 }
 // Mirror

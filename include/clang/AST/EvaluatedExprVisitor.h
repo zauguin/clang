@@ -40,9 +40,11 @@ public:
   // other sub-expressions).
   void VisitDeclRefExpr(PTR(DeclRefExpr) E) { }
   void VisitOffsetOfExpr(PTR(OffsetOfExpr) E) { }
-  // Mirror
-  void VisitReflexprOperatorExpr(PTR(ReflexprOperandExpr) E) { }
-  void VisitReflexprElementOperatorExpr(PTR(ReflexprElementOperandExpr) E) { }
+
+  // Mirror TODO
+  //void VisitReflexprExpr(PTR(ReflexprExpr) E) { }
+  void VisitReflexprSizeExpr(PTR(ReflexprSizeExpr) E) { }
+  //void VisitReflexprElementExpr(PTR(ReflexprElementExpr) E) { }
   //Mirror
 
   void VisitUnaryExprOrTypeTraitExpr(PTR(UnaryExprOrTypeTraitExpr) E) { }

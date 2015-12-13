@@ -20,7 +20,7 @@ int main(void)
 	static_assert(meta::is_alias_v<meta_foo_baz>, "");
 
 	static_assert(is_same<
-		meta::get_type_t<meta_foo_baz>,
+		meta::get_reflected_type_t<meta_foo_baz>,
 		foo::baz
 	>::value, "");
 
@@ -36,7 +36,7 @@ int main(void)
 	static_assert(meta::is_alias_v<meta_foo_bar>, "");
 
 	static_assert(is_same<
-		meta::get_type_t<meta_foo_bar>,
+		meta::get_reflected_type_t<meta_foo_bar>,
 		foo::bar
 	>::value, "");
 
@@ -52,7 +52,7 @@ int main(void)
 	static_assert(!meta::is_alias_v<meta_int>, "");
 
 	static_assert(is_same<
-		meta::get_type_t<meta_int>,
+		meta::get_reflected_type_t<meta_int>,
 		int
 	>::value, "");
 

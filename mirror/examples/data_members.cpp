@@ -1,27 +1,74 @@
 #include "reflexpr.hpp"
 #include <iostream>
 
-struct point
+struct foo
 {
+private:
+	int _i, _j;
+public:
+	static constexpr const bool b = true;
 	float x, y, z;
-};
-
-struct triangle
-{
-	point a, b, c;
+private:
+	static double d;
 };
 
 int main(void)
 {
 	using namespace std;
 
-	// reflected type unsigned
-	typedef reflexpr(triangle) meta_triangle;
+	typedef reflexpr(foo) meta_foo;
 
-	typedef meta::get_data_members_t<meta_triangle> meta_data_mems;
+	// (public) data members
+	typedef meta::get_data_members_t<meta_foo> meta_data_mems;
 
 	static_assert(is_metaobject_v<meta_data_mems>, "");
 	static_assert(meta::is_sequence_v<meta_data_mems>, "");
+
+	std::cout << meta::get_size_v<meta_data_mems> << std::endl;
+
+	// 0-th (public) data member
+	typedef meta::get_element_t<meta_data_mems, 0> meta_data_mem0;
+
+	static_assert(is_metaobject_v<meta_data_mem0>, "");
+	static_assert(meta::is_variable_v<meta_data_mem0>, "");
+	static_assert(meta::has_type_v<meta_data_mem0>, "");
+
+	std::cout << meta::get_name_v<meta_data_mem0> << std::endl;
+
+	// 2-nd (public) data member
+	typedef meta::get_element_t<meta_data_mems, 2> meta_data_mem2;
+
+	static_assert(is_metaobject_v<meta_data_mem2>, "");
+	static_assert(meta::is_variable_v<meta_data_mem2>, "");
+	static_assert(meta::has_type_v<meta_data_mem2>, "");
+
+	std::cout << meta::get_name_v<meta_data_mem2> << std::endl;
+
+	// all data members
+	typedef meta::get_all_data_members_t<meta_foo> meta_all_data_mems;
+
+	static_assert(is_metaobject_v<meta_all_data_mems>, "");
+	static_assert(meta::is_sequence_v<meta_all_data_mems>, "");
+
+	std::cout << meta::get_size_v<meta_all_data_mems> << std::endl;
+
+	// 0-th (overall) data member
+	typedef meta::get_element_t<meta_all_data_mems, 0> meta_all_data_mem0;
+
+	static_assert(is_metaobject_v<meta_all_data_mem0>, "");
+	static_assert(meta::is_variable_v<meta_all_data_mem0>, "");
+	static_assert(meta::has_type_v<meta_all_data_mem0>, "");
+
+	std::cout << meta::get_name_v<meta_all_data_mem0> << std::endl;
+
+	// 3-rd (overall) data member
+	typedef meta::get_element_t<meta_all_data_mems, 3> meta_all_data_mem3;
+
+	static_assert(is_metaobject_v<meta_all_data_mem3>, "");
+	static_assert(meta::is_variable_v<meta_all_data_mem3>, "");
+	static_assert(meta::has_type_v<meta_all_data_mem3>, "");
+
+	std::cout << meta::get_name_v<meta_all_data_mem3> << std::endl;
 
 	return 0;
 }

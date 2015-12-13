@@ -250,6 +250,9 @@ public:
     return Builder.CreateBitCast(V, ConvertType(E->getType()));
   }
 
+  // Mirror
+  Value *VisitReflexprSizeExpr(const ReflexprSizeExpr *E);
+
   Value *VisitSizeOfPackExpr(SizeOfPackExpr *E) {
     return llvm::ConstantInt::get(ConvertType(E->getType()),E->getPackLength());
   }
@@ -2044,6 +2047,18 @@ ScalarExprEmitter::VisitUnaryExprOrTypeTraitExpr(
   // folding logic so we don't have to duplicate it here.
   return Builder.getInt(E->EvaluateKnownConstInt(CGF.getContext()));
 }
+
+// Mirror
+Value *
+ScalarExprEmitter::VisitReflexprSizeExpr(const ReflexprSizeExpr *E) {
+
+  // Mirror TODO
+  ASTContext& context = CGF.getContext();
+  llvm::APInt Count(context.getTypeSize(context.getSizeType()), 0);
+
+  return llvm::ConstantInt::get(CGF.SizeTy, Count);
+}
+// Mirror
 
 Value *ScalarExprEmitter::VisitUnaryReal(const UnaryOperator *E) {
   Expr *Op = E->getSubExpr();

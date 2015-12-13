@@ -3139,7 +3139,7 @@ recurse:
     break;
 
   // Mirror TODO
-  case Expr::ReflexprOperandExprClass: {
+  case Expr::ReflexprExprClass: {
       DiagnosticsEngine &Diags = Context.getDiags();
       unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
                                      "cannot yet mangle reflexpr operand expr");
@@ -3149,7 +3149,17 @@ recurse:
   // Mirror
 
   // Mirror TODO
-  case Expr::ReflexprElementOperandExprClass: {
+  case Expr::ReflexprSizeExprClass: {
+      DiagnosticsEngine &Diags = Context.getDiags();
+      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
+                        "cannot yet mangle __reflexpr_size operand expr");
+      Diags.Report(DiagID);
+      return;
+  }
+  // Mirror
+
+  // Mirror TODO
+  case Expr::ReflexprElementExprClass: {
       DiagnosticsEngine &Diags = Context.getDiags();
       unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
                         "cannot yet mangle __reflexpr_element operand expr");

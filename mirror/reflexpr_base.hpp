@@ -9,6 +9,7 @@ struct __reflexpr_metaobject
 	static constexpr const unsigned _src_column = 0u;
 	static constexpr const bool _is_spcfr = false;
 	static constexpr const bool _has_name = false;
+	static constexpr const bool _has_type = false;
 	static constexpr const bool _has_scope = false;
 	static constexpr const bool _is_scope = false;
 	static constexpr const bool _is_alias = false;
@@ -47,6 +48,14 @@ struct __reflexpr_meta_ns_base
 	static constexpr const bool _has_name = true;
 	static constexpr const bool _has_scope = true;
 	static constexpr const bool _is_scope = true;
+};
+
+struct __reflexpr_meta_var_base
+ : __reflexpr_metaobject
+{
+	static constexpr const unsigned _cat_bits = 0x00000100;
+	static constexpr const bool _has_name = true;
+	static constexpr const bool _has_type = true;
 };
 
 #endif

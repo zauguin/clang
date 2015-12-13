@@ -274,7 +274,10 @@ void ASTTypeWriter::VisitReflexprType(const ReflexprType *T) {
 
 // Mirror
 void ASTTypeWriter::VisitReflexprElementType(const ReflexprElementType *T) {
+/* Mirror TODO
   Writer.AddTypeRef(T->getMetaobjectSequenceType(), Record);
+  Writer.AddAPInt(llvm::APInt(32, T->getElementExpr()->getIndex()), Record);
+*/
   Writer.AddStmt(T->getUnderlyingExpr());
   Code = TYPE_REFLEXPR_ELEMENT;
 }

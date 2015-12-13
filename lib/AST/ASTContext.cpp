@@ -4180,6 +4180,19 @@ std::string ASTContext::makeMetaTypeName(QualType rt) {
 }
 
 // Mirror
+std::string ASTContext::makeMetaVariableName(const ValueDecl* var_decl) {
+
+  std::string result("__reflexpr_mvar");
+
+  std::hash<std::string> hshf;
+
+  // Mirror TODO: 
+  result.append(std::to_string(hshf(var_decl->getQualifiedNameAsString())));
+
+  return result;
+}
+
+// Mirror
 CXXRecordDecl* ASTContext::lookupPrevMetaobjectDecl(IdentifierInfo& mo_ident) {
 
   DeclContextLookupResult mo_lr = getTranslationUnitDecl()->lookup(&mo_ident);
@@ -4190,6 +4203,74 @@ CXXRecordDecl* ASTContext::lookupPrevMetaobjectDecl(IdentifierInfo& mo_ident) {
     assert(mo_decl != nullptr && "metaobject must be a CXXRecordDecl");
   }
   return mo_decl;
+}
+
+// Mirror
+QualType ASTContext::lookupMoMemberTypedefType(const CXXRecordDecl* mo_decl,
+                                               IdentifierInfo& ident) {
+
+  assert(mo_decl != nullptr);
+  assert(mo_decl->isMetaobject() && "Member typedef lookup on non-Metaobject");
+  DeclContextLookupResult mt_lr = mo_decl->lookup(&ident);
+
+  if(!mt_lr.empty()) {
+    if(const TypedefDecl* td = dyn_cast<TypedefDecl>(mt_lr.front())) {
+      return td->getUnderlyingType();
+    }
+  }
+  return QualType();
+};
+
+// Mirror
+const CXXRecordDecl *
+ASTContext::lookupMoMemberMetaobjectDecl(const CXXRecordDecl* mo_decl,
+                                         IdentifierInfo& ident) {
+
+  QualType tdt = lookupMoMemberTypedefType(mo_decl, ident);
+  if(const RecordType* rt = dyn_cast<RecordType>(tdt.getTypePtr())) {
+    if(const CXXRecordDecl* mmo_decl = dyn_cast<CXXRecordDecl>(rt->getDecl())){
+      if(mmo_decl->isMetaobject()) {
+        return mmo_decl;
+      }
+    }
+  }
+  return nullptr;
+}
+
+// Mirror
+const VarDecl *
+ASTContext::lookupMoMemberVariableDecl(const CXXRecordDecl* mo_decl,
+                                       IdentifierInfo& ident) {
+  assert(mo_decl != nullptr);
+  assert(mo_decl->isMetaobject() && "Member variable lookup on non-Metaobject");
+  DeclContextLookupResult mt_lr = mo_decl->lookup(&ident);
+
+  if(!mt_lr.empty()) {
+    if(const VarDecl* vd = dyn_cast<VarDecl>(mt_lr.front())) {
+      return vd;
+    }
+  }
+  return nullptr;
+}
+
+// Mirror
+ASTContext::MetaobjectSequenceKind 
+ASTContext::lookupMetaobjectSequenceKind(const CXXRecordDecl* mos_decl) {
+
+  if(const VarDecl* msk_vd = 
+    lookupMoMemberVariableDecl(mos_decl, Idents.get("_seq_kind"))) {
+
+    if(const APValue* msk_val = msk_vd->evaluateValue()) {
+
+      assert(msk_val->isInt() &&
+             "MetaobjectSequence::_seq_kind does not have integer type");
+
+      return MetaobjectSequenceKind(unsigned(msk_val->getInt().getExtValue()));
+    }
+    llvm_unreachable("MetaobjectSequence::_seq_kind is not initialized");
+  }
+  llvm_unreachable("MetaobjectSequence::_seq_kind is missing");
+  return MoSK_None;
 }
 
 // Mirror
@@ -4230,6 +4311,22 @@ QualType ASTContext::finalizeMetaobject(CXXRecordDecl* mo_decl) {
   mo_decl->setImplicit();
 
   return QualType(new(*this, TypeAlignment) RecordType(mo_decl), 0);
+}
+
+// Mirror
+const CXXRecordDecl* ASTContext::unwrapMetaobjectDecl(QualType MoType) {
+
+  if(const Type* mos_t = MoType->getUnqualifiedDesugaredType()) {
+    if(const RecordType* mos_rct = dyn_cast<RecordType>(mos_t)) {
+      if(const CXXRecordDecl* mos_rcd =
+        dyn_cast<CXXRecordDecl>(mos_rct->getDecl())) {
+        if(mos_rcd->isMetaobject()) {
+          return mos_rcd;
+        }
+      }
+    }
+  }
+  return nullptr;
 }
 
 // Mirror
@@ -4299,6 +4396,7 @@ QualType ASTContext::getMetaSpecifier(const StringRef& spec_kw) {
 static constexpr const unsigned reflexprTypeTag         = 0x00000010;
 static constexpr const unsigned reflexprClassTag        = 0x00000030;
 static constexpr const unsigned reflexprEnumTag         = 0x00000050;
+static constexpr const unsigned reflexprVariableTag     = 0x00000100;
 // Mirror
 
 // Mirror
@@ -4356,7 +4454,6 @@ QualType ASTContext::getMetaNamespace(const NamedDecl* ns_decl) {
   addMetaobjectSourceInfo(mo_decl, ns_decl, loc);
 
   // name
-  addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
   addMetaobjectCTString(mo_decl, "_base_name", ns_decl->getName(), loc);
 
   // alias
@@ -4376,7 +4473,6 @@ QualType ASTContext::getMetaNamespace(const NamedDecl* ns_decl) {
 // Mirror
 QualType ASTContext::getMetaType(QualType ReflectedType) {
 
-  // TODO: check for name clashes
   // metaobject name
   std::string mo_name = makeMetaTypeName(ReflectedType);
 
@@ -4465,8 +4561,12 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
     if(const RecordDecl* rt_rd = dyn_cast<RecordDecl>(rt_decl)) {
       (void)rt_rd;
       addMetaobjectBoolTrait(mo_decl, "_is_scope", true, loc);
-      // data members
-      addMetaobjectSequence(mo_decl, "_data_mems", MoSK_ClassDataMembers, loc);
+      // public data members
+      addMetaobjectSequence(mo_decl, "_pub_data_mems",
+                            MoSK_PubClassDataMembers, loc);
+      // all data members
+      addMetaobjectSequence(mo_decl, "_all_data_mems",
+                            MoSK_AllClassDataMembers, loc);
     }
 
     if(const EnumDecl* rt_ed = dyn_cast<EnumDecl>(rt_decl)) {
@@ -4534,12 +4634,226 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
   // the category
   addMetaobjectUIntTrait(mo_decl, "_cat_bits", mo_category, loc);
 
-  // finalize the metaobject record
+  return finalizeMetaobject(mo_decl);
+}
+// Mirror
+
+// Mirror
+QualType ASTContext::getMetaVariable(const ValueDecl* var_decl) {
+
+  assert(var_decl != nullptr);
+
+  // metaobject name
+  IdentifierInfo& mo_ident = Idents.get(makeMetaVariableName(var_decl));
+
+  // try to find any previous declarations of this metaobject
+  CXXRecordDecl* mo_decl = lookupPrevMetaobjectDecl(mo_ident);
+  if(mo_decl != nullptr) {
+    return QualType(mo_decl->getTypeForDecl(), 0);
+  }
+  // Invalid source location since the metaobject is generated
+  SourceLocation loc;
+  // The declaration of the metaobject record
+  mo_decl = createNewMetaobjectDecl(mo_ident, loc);
+
+  // inherit from base metaobject
+  addMetaobjectBase(mo_decl, "__reflexpr_meta_var_base", loc);
+
+  // injected record decl
+  addMetaobjectInjectDecl(mo_decl, mo_ident, loc);
+
+  // add source file, line column, etc.
+  addMetaobjectSourceInfo(mo_decl, var_decl, loc);
+
+  // name
+  addMetaobjectCTString(mo_decl, "_base_name", var_decl->getName(), loc);
+
+  // type
+  addMetaobjectTypedef(mo_decl, "_type", getMetaType(var_decl->getType()), loc);
+
+  // Mirror TODO: storage class specifier
+  // Mirror TODO: access specifier
+  // Mirror TODO: class member trait
+
+  // the category
+  addMetaobjectUIntTrait(mo_decl, "_cat_bits", reflexprVariableTag, loc);
+
   return finalizeMetaobject(mo_decl);
 }
 
 // Mirror
-QualType ASTContext::getReflexprType(ReflexprOperandExpr *e) {
+unsigned ASTContext::getMetaClassMemberCount(const RecordDecl* rec_decl,
+                                             MetaobjectSequenceKind seq_kind) {
+
+  assert(rec_decl != nullptr);
+  // TODO: other sequence kinds
+  assert(((seq_kind == MoSK_PubClassDataMembers) ||
+          (seq_kind == MoSK_AllClassDataMembers)
+         ) && "Invalid MetaobjectSequence kind");
+
+  unsigned count = 0;
+
+  auto i = rec_decl->decl_begin();
+  auto e = rec_decl->decl_end();
+
+  while(i != e) {
+
+    if(isa<FieldDecl>(*i) || isa<VarDecl>(*i)) {
+      if(seq_kind == MoSK_PubClassDataMembers) {
+        if(i->getAccess() == AS_public) {
+          ++count;
+        }
+      } else if (seq_kind == MoSK_AllClassDataMembers) {
+        ++count;
+      }
+    }
+
+    ++i;
+  }
+
+  return count;
+}
+
+// Mirror
+unsigned ASTContext::getMetaClassSequenceSize(const CXXRecordDecl* mc_decl,
+                                              MetaobjectSequenceKind seq_kind) {
+
+  QualType rec_type =
+    lookupMoMemberTypedefType(mc_decl, Idents.get("_orig_type"));
+  if(!rec_type.isNull()) {
+    if(const RecordType* rt = dyn_cast<RecordType>(rec_type.getTypePtr())) {
+
+      if(const RecordDecl* rec_decl = rt->getDecl()) {
+
+        switch(seq_kind) {
+          case MoSK_PubClassDataMembers:
+          case MoSK_AllClassDataMembers:
+            return getMetaClassMemberCount(rec_decl, seq_kind);
+          case MoSK_EnumMembers:
+          case MoSK_None:
+            llvm_unreachable("Unsupported MetaobjectSequence kind!");
+        }
+      }
+    }
+    llvm_unreachable("MetaType::_orig_type is not a record type");
+  }
+  llvm_unreachable("MetaType::_orig_type is missing");
+  return 0;
+}
+
+// Mirror
+unsigned ASTContext::getMetaobjectSequenceSize(QualType MoSeqType) {
+
+  if(const CXXRecordDecl* mos_rcd = unwrapMetaobjectDecl(MoSeqType)) {
+
+    if(const CXXRecordDecl* mmo_rcd =
+      lookupMoMemberMetaobjectDecl(mos_rcd, Idents.get("_container"))) {
+
+      MetaobjectSequenceKind seq_kind = lookupMetaobjectSequenceKind(mos_rcd);
+
+      switch(seq_kind) {
+        case MoSK_PubClassDataMembers:
+        case MoSK_AllClassDataMembers:
+          return getMetaClassSequenceSize(mmo_rcd, seq_kind);
+        case MoSK_EnumMembers:
+        case MoSK_None:
+          llvm_unreachable("Unsupported MetaobjectSequence kind!");
+      }
+    }
+    llvm_unreachable("MetaobjectSequence::_container is missing");
+  }
+  return 0;
+}
+
+// Mirror
+QualType ASTContext::getMetaClassMemberElement(const RecordDecl* rec_decl,
+                                               MetaobjectSequenceKind seq_kind,
+                                               unsigned index) {
+
+  assert(rec_decl != nullptr);
+  assert(((seq_kind == MoSK_PubClassDataMembers) ||
+          (seq_kind == MoSK_AllClassDataMembers)
+         ) && "Invalid MetaobjectSequence kind");
+
+  auto i = rec_decl->decl_begin();
+  auto e = rec_decl->decl_end();
+
+  while(i != e) {
+
+    if(isa<FieldDecl>(*i) || isa<VarDecl>(*i)) {
+      if(seq_kind == MoSK_PubClassDataMembers) {
+        if(i->getAccess() == AS_public) {
+          if(index-- == 0) {
+            return getMetaVariable(dyn_cast<ValueDecl>(*i));
+          }
+        }
+      } else if (seq_kind == MoSK_AllClassDataMembers) {
+        if(index-- == 0) {
+            return getMetaVariable(dyn_cast<ValueDecl>(*i));
+        }
+      }
+    }
+
+    ++i;
+  }
+
+  return QualType();
+}
+
+// Mirror
+QualType ASTContext::getMetaClassElementType(const CXXRecordDecl* mc_decl,
+                                             MetaobjectSequenceKind seq_kind,
+                                             unsigned index) {
+
+  QualType rec_type =
+    lookupMoMemberTypedefType(mc_decl, Idents.get("_orig_type"));
+  if(!rec_type.isNull()) {
+    if(const RecordType* rt = dyn_cast<RecordType>(rec_type.getTypePtr())) {
+
+      if(const RecordDecl* rec_decl = rt->getDecl()) {
+
+        switch(seq_kind) {
+          case MoSK_PubClassDataMembers:
+          case MoSK_AllClassDataMembers:
+            return getMetaClassMemberElement(rec_decl, seq_kind, index);
+          case MoSK_EnumMembers:
+          case MoSK_None:
+            llvm_unreachable("Unsupported MetaobjectSequence kind!");
+        }
+      }
+    }
+    llvm_unreachable("MetaType::_orig_type is not a record type");
+  }
+  llvm_unreachable("MetaType::_orig_type is missing");
+  return QualType();
+}
+
+// Mirror
+QualType ASTContext::getMoSeqElementType(QualType MoSeqType, unsigned index) {
+
+  if(const CXXRecordDecl* mos_rcd = unwrapMetaobjectDecl(MoSeqType)) {
+
+    if(const CXXRecordDecl* mmo_rcd =
+      lookupMoMemberMetaobjectDecl(mos_rcd, Idents.get("_container"))) {
+
+      MetaobjectSequenceKind seq_kind = lookupMetaobjectSequenceKind(mos_rcd);
+
+      switch(seq_kind) {
+        case MoSK_PubClassDataMembers:
+        case MoSK_AllClassDataMembers:
+          return getMetaClassElementType(mmo_rcd, seq_kind, index);
+        case MoSK_EnumMembers:
+        case MoSK_None:
+          llvm_unreachable("Unsupported MetaobjectSequence kind!");
+      }
+    }
+    llvm_unreachable("MetaobjectSequence::_container is missing");
+  }
+  return VoidTy;
+}
+
+// Mirror
+QualType ASTContext::getReflexprType(ReflexprExpr *e) {
 
   ReflexprType* rt = nullptr;
   if(e->isEmpty()) {
@@ -4598,26 +4912,37 @@ QualType ASTContext::getReflexprType(Expr *e, QualType ReflectedType) {
 
 // Mirror
 QualType ASTContext::getReflexprElementType(Expr *e) {
-  ReflexprElementType* ret = nullptr;
 
-  if(e->isInstantiationDependent()) {
-    ret = new (*this, TypeAlignment)
-           DependentReflexprElementType(*this, e);
-  } else if (ReflexprElementOperandExpr* REEOR =
-               dyn_cast<ReflexprElementOperandExpr>(e)) {
-    // Mirror TODO
-    ret = new (*this, TypeAlignment)
-           ReflexprElementType(REEOR, REEOR->getType(), REEOR->getType());
-
+  if(ReflexprElementExpr* REE = dyn_cast<ReflexprElementExpr>(e)) {
+    return getReflexprElementType(REE, REE->getMoSeqType());
   }
-
-  return QualType(ret, 0);
+  return QualType();
 }
 
 // Mirror
 QualType ASTContext::getReflexprElementType(Expr *e, QualType MoSeqType) {
-  // Mirror TODO
-  return getReflexprElementType(e);
+
+  ReflexprElementType* ret = nullptr;
+
+  if(e->isInstantiationDependent()) {
+    ret = new (*this, TypeAlignment)
+         DependentReflexprElementType(*this, e);
+  } else {
+
+    assert(!MoSeqType.isNull());
+    ReflexprElementExpr* REE = dyn_cast<ReflexprElementExpr>(e);
+    assert(REE != nullptr);
+
+    unsigned Index = unsigned(
+       REE->getIdxExpr()->EvaluateKnownConstInt(*this).getExtValue());
+
+    ret = new (*this, TypeAlignment)
+         ReflexprElementType(REE, getMoSeqElementType(MoSeqType, Index),
+                             MoSeqType);
+  }
+
+  Types.push_back(ret);
+  return QualType(ret, 0);
 }
 // Mirror
 

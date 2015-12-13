@@ -1,15 +1,10 @@
-#include "reflexpr_base.hpp"
-
-namespace foo {
-
-struct bar { };
-
-typedef bar baz;
-
-} // namespace foo
+template <unsigned I>
+struct foo
+{
+	static constexpr const unsigned value = I;
+};
 
 int main(void)
 {
-	reflexpr(foo::baz) x;
-	return sizeof(x);
+	return foo<0>::value;
 }

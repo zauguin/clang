@@ -1893,14 +1893,14 @@ public:
   ExprResult RebuildReflexprOperand(TypeSourceInfo *TInfo,
                                     SourceLocation OpLoc,
                                     SourceRange R) {
-    return getSema().CreateReflexprOperandExpr(TInfo, OpLoc, R);
+    return getSema().CreateReflexprExpr(TInfo, OpLoc, R);
   }
 
   // Mirror
   ExprResult RebuildReflexprOperand(Expr *SubExpr, SourceLocation OpLoc,
                                     SourceRange R) {
     ExprResult Result
-      = getSema().CreateReflexprOperandExpr(SubExpr, OpLoc, R);
+      = getSema().CreateReflexprExpr(SubExpr, OpLoc, R);
     if (Result.isInvalid())
       return ExprError();
 
@@ -1908,10 +1908,19 @@ public:
   }
 
   // Mirror
+  ExprResult RebuildReflexprSizeOperand(TypeSourceInfo *TInfo,
+                                        SourceLocation OpLoc,
+                                        SourceRange R) {
+    return getSema().CreateReflexprSizeExpr(TInfo, OpLoc, R);
+  }
+  // Mirror
+
+  // Mirror
   ExprResult RebuildReflexprElementOperand(TypeSourceInfo *TInfo,
+                                           Expr* IdxExpr,
                                            SourceLocation OpLoc,
                                            SourceRange R) {
-    return getSema().CreateReflexprElementOperandExpr(TInfo, OpLoc, R);
+    return getSema().CreateReflexprElementExpr(TInfo, IdxExpr, OpLoc, R);
   }
   // Mirror
 
@@ -8039,7 +8048,7 @@ TreeTransform<Derived>::TransformPseudoObjectExpr(PseudoObjectExpr *E) {
 // Mirror
 template<typename Derived>
 ExprResult
-TreeTransform<Derived>::TransformReflexprOperandExpr(ReflexprOperandExpr *E) {
+TreeTransform<Derived>::TransformReflexprExpr(ReflexprExpr *E) {
   if (E->isType()) {
     TypeSourceInfo *OldT = E->getTypeInfo();
 
@@ -8089,8 +8098,7 @@ TreeTransform<Derived>::TransformReflexprOperandExpr(ReflexprOperandExpr *E) {
 // Mirror
 template<typename Derived>
 ExprResult
-TreeTransform<Derived>::TransformReflexprElementOperandExpr(
-  ReflexprElementOperandExpr *E) {
+TreeTransform<Derived>::TransformReflexprSizeExpr(ReflexprSizeExpr *E) {
 
   TypeSourceInfo *OldT = E->getTypeInfo();
 
@@ -8101,8 +8109,38 @@ TreeTransform<Derived>::TransformReflexprElementOperandExpr(
   if (!getDerived().AlwaysRebuild() && OldT == NewT)
     return E;
 
-  return getDerived().RebuildReflexprOperand(NewT, E->getOperatorLoc(),
-                                                   E->getSourceRange());
+  return getDerived().RebuildReflexprSizeOperand(NewT,
+                                                 E->getOperatorLoc(),
+                                                 E->getSourceRange());
+}
+// Mirror
+
+// Mirror
+template<typename Derived>
+ExprResult
+TreeTransform<Derived>::TransformReflexprElementExpr(ReflexprElementExpr *E) {
+
+  TypeSourceInfo *OldT = E->getTypeInfo();
+
+  TypeSourceInfo *NewT = getDerived().TransformType(OldT);
+  if (!NewT)
+    return ExprError();
+
+  Expr *OldIdxExpr = E->getIdxExpr();
+
+  ExprResult NewIdxExpr = getDerived().TransformExpr(OldIdxExpr);
+
+  if (NewIdxExpr.isInvalid())
+    return ExprError();
+
+  if (!getDerived().AlwaysRebuild() &&
+      OldT == NewT && OldIdxExpr == NewIdxExpr.get()) {
+    return E;
+  }
+
+  return getDerived().RebuildReflexprElementOperand(NewT, NewIdxExpr.get(),
+                                                    E->getOperatorLoc(),
+                                                    E->getSourceRange());
 }
 // Mirror
 

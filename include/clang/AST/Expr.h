@@ -1986,7 +1986,7 @@ public:
 };
 
 // Mirror
-class ReflexprOperandExpr : public Expr {
+class ReflexprExpr : public Expr {
   union {
     const NamedDecl* Nd;
     TypeSourceInfo *Ty;
@@ -1994,23 +1994,22 @@ class ReflexprOperandExpr : public Expr {
   } Argument;
   SourceLocation OpLoc, RParenLoc;
 public:
-  ReflexprOperandExpr(SourceLocation op, SourceLocation rp);
+  ReflexprExpr(SourceLocation op, SourceLocation rp);
 
-  ReflexprOperandExpr(const NamedDecl *Named,
-                      SourceLocation op, SourceLocation rp);
+  ReflexprExpr(const NamedDecl *Named, SourceLocation op, SourceLocation rp);
 
-  ReflexprOperandExpr(TypeSourceInfo *TInfo, QualType argType,
-                      SourceLocation op, SourceLocation rp);
+  ReflexprExpr(TypeSourceInfo *TInfo, QualType argType,
+               SourceLocation op, SourceLocation rp);
 
-  ReflexprOperandExpr(Expr *E, QualType resultType,
-                      SourceLocation op, SourceLocation rp);
+  ReflexprExpr(Expr *E, QualType resultType,
+               SourceLocation op, SourceLocation rp);
 
   /// \brief Construct an empty reflexpr expression.
-  explicit ReflexprOperandExpr(EmptyShell Empty)
-    : Expr(ReflexprOperandExprClass, Empty) { }
+  explicit ReflexprExpr(EmptyShell Empty)
+    : Expr(ReflexprExprClass, Empty) { }
 
-  bool isNamedDecl() const { return ReflexprOperandExprBits.IsNamedDecl; }
-  bool isType() const { return ReflexprOperandExprBits.IsType; }
+  bool isNamedDecl() const { return ReflexprExprBits.IsNamedDecl; }
+  bool isType() const { return ReflexprExprBits.IsType; }
   bool isExpr() const { return !isType() && !isNamedDecl(); }
 
   bool isEmpty() const {
@@ -2019,14 +2018,15 @@ public:
 
   void setArgument(Expr *E) {
     Argument.Ex = E;
-    ReflexprOperandExprBits.IsType = false;
+    ReflexprExprBits.IsType = false;
   }
 
   void setArgument(TypeSourceInfo *TInfo) {
     Argument.Ty = TInfo;
-    ReflexprOperandExprBits.IsType = true;
+    ReflexprExprBits.IsType = true;
   }
 
+  // Mirror TODO: this hides Expr::getType, rename it
   QualType getType() const { return getTypeInfo()->getType(); }
 
   const NamedDecl* getNamedDecl() const {
@@ -2045,7 +2045,7 @@ public:
   }
 
   const Expr *getExpr() const {
-    return const_cast<ReflexprOperandExpr*>(this)->getExpr();
+    return const_cast<ReflexprExpr*>(this)->getExpr();
   }
 
   SourceLocation getOperatorLoc() const { return OpLoc; }
@@ -2058,7 +2058,7 @@ public:
   SourceLocation getLocEnd() const LLVM_READONLY { return RParenLoc; }
 
   static bool classof(const Stmt *T) {
-    return T->getStmtClass() == ReflexprOperandExprClass;
+    return T->getStmtClass() == ReflexprExprClass;
   }
 
   // Iterators
@@ -2066,16 +2066,16 @@ public:
 };
 
 // Mirror
-class ReflexprElementOperandExpr : public Expr {
+class ReflexprSizeExpr : public Expr {
   TypeSourceInfo *MoSeqTy;
   SourceLocation OpLoc, RParenLoc;
 public:
-  ReflexprElementOperandExpr(TypeSourceInfo *TInfo, QualType MoSeqT,
-                             SourceLocation op, SourceLocation rp);
+  ReflexprSizeExpr(TypeSourceInfo *TInfo, QualType SizeT,
+                   SourceLocation op, SourceLocation rp);
 
   /// \brief Construct an empty reflexpr expression.
-  explicit ReflexprElementOperandExpr(EmptyShell Empty)
-    : Expr(ReflexprElementOperandExprClass, Empty)
+  explicit ReflexprSizeExpr(EmptyShell Empty)
+    : Expr(ReflexprSizeExprClass, Empty)
     , MoSeqTy(nullptr)
    { }
 
@@ -2088,7 +2088,7 @@ public:
     MoSeqTy = TInfo;
   }
 
-  QualType getType() const { return getTypeInfo()->getType(); }
+  QualType getMoSeqType() const { return getTypeInfo()->getType(); }
 
   SourceLocation getOperatorLoc() const { return OpLoc; }
   void setOperatorLoc(SourceLocation L) { OpLoc = L; }
@@ -2100,7 +2100,56 @@ public:
   SourceLocation getLocEnd() const LLVM_READONLY { return RParenLoc; }
 
   static bool classof(const Stmt *T) {
-    return T->getStmtClass() == ReflexprElementOperandExprClass;
+    return T->getStmtClass() == ReflexprSizeExprClass;
+  }
+
+  // Iterators
+  child_range children();
+};
+
+// Mirror
+class ReflexprElementExpr : public Expr {
+  TypeSourceInfo *MoSeqTy;
+  Expr* IdxExpr;
+  SourceLocation OpLoc, RParenLoc;
+public:
+  ReflexprElementExpr(TypeSourceInfo *TInfo, QualType MoSeqT, Expr* idxExpr,
+                      SourceLocation op, SourceLocation rp);
+
+  /// \brief Construct an empty reflexpr expression.
+  explicit ReflexprElementExpr(EmptyShell Empty)
+    : Expr(ReflexprElementExprClass, Empty)
+    , MoSeqTy(nullptr)
+    , IdxExpr(nullptr)
+   { }
+
+  TypeSourceInfo *getTypeInfo() const {
+    assert(MoSeqTy != nullptr && "Calling getTypeInfo on empty expression");
+    return MoSeqTy;
+  }
+
+  void setArgument(TypeSourceInfo *TInfo) {
+    MoSeqTy = TInfo;
+  }
+
+  QualType getMoSeqType() const { return getTypeInfo()->getType(); }
+
+  Expr *getIdxExpr() const {
+    assert(IdxExpr != nullptr && "Calling getIdxExpr in empty expression");
+    return IdxExpr;
+  }
+
+  SourceLocation getOperatorLoc() const { return OpLoc; }
+  void setOperatorLoc(SourceLocation L) { OpLoc = L; }
+
+  SourceLocation getRParenLoc() const { return RParenLoc; }
+  void setRParenLoc(SourceLocation L) { RParenLoc = L; }
+
+  SourceLocation getLocStart() const LLVM_READONLY { return OpLoc; }
+  SourceLocation getLocEnd() const LLVM_READONLY { return RParenLoc; }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == ReflexprElementExprClass;
   }
 
   // Iterators

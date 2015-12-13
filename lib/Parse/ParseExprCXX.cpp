@@ -269,7 +269,7 @@ bool Parser::ParseOptionalCXXScopeSpecifier(CXXScopeSpec &SS,
         SS.SetInvalid(SourceRange(DeclLoc, CCLoc));
 
       HasScopeSpecifier = true;
-    } else if(Tok.isOneOf(tok::kw_reflexpr, tok::annot_reflexpr)) {
+    } else if(Tok.isOneOf(tok::kw_reflexpr, tok::annot_reflexpr)) { // Mirror
       DeclSpec DS(AttrFactory);
       SourceLocation DeclLoc = Tok.getLocation();
       SourceLocation EndLoc;
@@ -285,6 +285,8 @@ bool Parser::ParseOptionalCXXScopeSpecifier(CXXScopeSpec &SS,
         SS.SetInvalid(SourceRange(DeclLoc, CCLoc));
 
       HasScopeSpecifier = true;
+    } else if(Tok.is(tok::kw___reflexpr_element)) { // Mirror
+      llvm_unreachable("__reflexpr_element should not be used as scope spec");
     }
   }
 

@@ -1753,11 +1753,13 @@ QualType ASTNodeImporter::VisitReflexprElementType(const ReflexprElementType*T){
   if (!ToExpr)
     return QualType();
   
+/* Mirror TODO: this + index
   QualType MoSeqType = Importer.Import(T->getMetaobjectSequenceType());
   if (MoSeqType.isNull())
     return QualType();
+*/
 
-  return Importer.getToContext().getReflexprElementType(ToExpr, MoSeqType);
+  return Importer.getToContext().getReflexprElementType(ToExpr);
 }
 // Mirror
 

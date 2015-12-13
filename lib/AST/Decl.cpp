@@ -3620,12 +3620,19 @@ void RecordDecl::setCapturedRecord() {
   addAttr(CapturedRecordAttr::CreateImplicit(getASTContext()));
 }
 
-RecordDecl::field_iterator RecordDecl::field_begin() const {
+// Mirror
+RecordDecl::decl_iterator RecordDecl::decl_begin() const {
   if (hasExternalLexicalStorage() && !LoadedFieldsFromExternalStorage)
     LoadFieldsFromExternalStorage();
 
-  return field_iterator(decl_iterator(FirstDecl));
+  return decl_iterator(FirstDecl);
 }
+// Mirror
+RecordDecl::field_iterator RecordDecl::field_begin() const {
+
+  return field_iterator(decl_begin());
+}
+// Mirror
 
 /// completeDefinition - Notes that the definition of this type is now
 /// complete.

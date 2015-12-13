@@ -409,13 +409,17 @@ public:
   void VisitOffsetOfExpr(const OffsetOfExpr *Ex, ExplodedNode *Pred,
                          ExplodedNodeSet &Dst);
 
-  /// Mirror VisitReflexprOperandExpr
-  void VisitReflexprOperandExpr(const ReflexprOperandExpr *Ex,
-                              ExplodedNode *Pred, ExplodedNodeSet &Dst);
+  /// Mirror VisitReflexprExpr
+  void VisitReflexprExpr(const ReflexprExpr *Ex,
+                         ExplodedNode *Pred, ExplodedNodeSet &Dst);
 
-  /// Mirror VisitReflexprElementOperandExpr
-  void VisitReflexprElementOperandExpr(const ReflexprElementOperandExpr *Ex,
-                                     ExplodedNode *Pred, ExplodedNodeSet &Dst);
+  /// Mirror VisitReflexprSizeExpr
+  void VisitReflexprSizeExpr(const ReflexprSizeExpr *Ex,
+                             ExplodedNode *Pred, ExplodedNodeSet &Dst);
+
+  /// Mirror VisitReflexprElementExpr
+  void VisitReflexprElementExpr(const ReflexprElementExpr *Ex,
+                                ExplodedNode *Pred, ExplodedNodeSet &Dst);
 
   /// VisitUnaryExprOrTypeTraitExpr - Transfer function for sizeof.
   void VisitUnaryExprOrTypeTraitExpr(const UnaryExprOrTypeTraitExpr *Ex,

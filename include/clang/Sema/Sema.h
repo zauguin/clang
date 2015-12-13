@@ -4849,24 +4849,29 @@ public:
                                    bool *IsCorrectedToColon = nullptr);
 
   // Mirror
-  ExprResult CreateReflexprOperandExpr(const NamedDecl* n_decl,
-                                       SourceLocation OpLoc,
-                                       SourceRange R);
+  ExprResult CreateReflexprExpr(const NamedDecl* n_decl,
+                                SourceLocation OpLoc,
+                                SourceRange R);
 
-  ExprResult CreateReflexprOperandExpr(TypeSourceInfo *TInfo,
-                                       SourceLocation OpLoc,
-                                       SourceRange R);
+  ExprResult CreateReflexprExpr(TypeSourceInfo *TInfo,
+                                SourceLocation OpLoc,
+                                SourceRange R);
 
-  ExprResult CreateReflexprOperandExpr(SourceLocation OpLoc,
-                                       SourceRange R);
+  ExprResult CreateReflexprExpr(SourceLocation OpLoc,
+                                SourceRange R);
 
-  ExprResult CreateReflexprOperandExpr(Expr* E,
-                                       SourceLocation OpLoc,
-                                       SourceRange R);
+  ExprResult CreateReflexprExpr(Expr* E,
+                                SourceLocation OpLoc,
+                                SourceRange R);
   // Mirror
-  ExprResult CreateReflexprElementOperandExpr(TypeSourceInfo *TInfo,
-                                              SourceLocation OpLoc,
-                                              SourceRange R);
+  ExprResult CreateReflexprSizeExpr(TypeSourceInfo *TInfo,
+                                    SourceLocation OpLoc,
+                                    SourceRange R);
+  // Mirror
+  ExprResult CreateReflexprElementExpr(TypeSourceInfo *TInfo,
+                                       Expr* IdxExpr,
+                                       SourceLocation OpLoc,
+                                       SourceRange R);
 
   // Mirror
   bool isReflexprHeaderIncluded(SourceLocation);
@@ -4886,7 +4891,14 @@ public:
 
   ExprResult ActOnReflexprExpression(Expr *E);
 
+  ExprResult ActOnReflexprSizeExpression(ParsedType& MoSeqTy,
+                                         SourceLocation Loc,
+                                         SourceLocation EndLoc);
+
+  ExprResult ActOnReflexprSizeExpression(Expr *E);
+
   ExprResult ActOnReflexprElementExpression(ParsedType& MoSeqTy,
+                                            Expr* IdxExpr,
                                             SourceLocation Loc,
                                             SourceLocation EndLoc);
 

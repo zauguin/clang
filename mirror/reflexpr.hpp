@@ -78,6 +78,7 @@ typedef __reflexpr_mo_category<0x00000003> global_scope_tag;
 typedef __reflexpr_mo_category<0x00000010> type_tag;
 typedef __reflexpr_mo_category<0x00000030> class_tag;
 typedef __reflexpr_mo_category<0x00000050> enum_tag;
+typedef __reflexpr_mo_category<0x00000100> variable_tag;
 
 // get_category
 template <typename X>
@@ -131,6 +132,13 @@ using is_class = has_category<X, class_tag>;
 template <typename X>
 constexpr bool is_class_v = is_class<X>::value;
 
+// is_variable
+template <typename X>
+using is_variable = has_category<X, variable_tag>;
+
+template <typename X>
+constexpr bool is_variable_v = is_variable<X>::value;
+
 
 // is_specifier
 template <typename X>
@@ -156,6 +164,32 @@ using is_sequence_t = typename is_sequence<X>::type;
 
 template <typename X>
 constexpr bool is_sequence_v = is_sequence<X>::value;
+
+
+
+// has_type
+template <typename X>
+struct has_type
+ : std::integral_constant<bool, X::_has_type>
+{ };
+
+template <typename X>
+using has_type_t = typename has_type<X>::type;
+
+template <typename X>
+constexpr bool has_type_v = has_type<X>::value;
+
+// get_type
+template <typename X>
+struct get_type
+{
+	static_assert(has_type_v<X>, "");
+
+	typedef typename X::_type type;
+};
+
+template <typename X>
+using get_type_t = typename get_type<X>::type;
 
 
 
@@ -262,9 +296,9 @@ using source_column_t = typename source_column<X>::type;
 template <typename X>
 constexpr unsigned source_column_v = source_column<X>::value;
 
-// get_type
+// get_reflected_type
 template <typename X>
-struct get_type
+struct get_reflected_type
 {
 	static_assert(is_type_v<X>, "");
 
@@ -272,7 +306,7 @@ struct get_type
 };
 
 template <typename X>
-using get_type_t = typename get_type<X>::type;
+using get_reflected_type_t = typename get_reflected_type<X>::type;
 
 // is_alias
 template <typename X>
@@ -326,11 +360,38 @@ struct get_data_members
 {
 	static_assert(is_class_v<X>, "");
 
-	typedef typename X::_data_mems type;
+	typedef typename X::_pub_data_mems type;
 };
 
 template <typename X>
 using get_data_members_t = typename get_data_members<X>::type;
+
+// get_all_data_members
+template <typename X>
+struct get_all_data_members
+{
+	static_assert(is_class_v<X>, "");
+
+	typedef typename X::_all_data_mems type;
+};
+
+template <typename X>
+using get_all_data_members_t = typename get_all_data_members<X>::type;
+
+
+// get_size
+template <typename X>
+struct get_size
+ : std::integral_constant<size_t, __reflexpr_size(X)>
+{
+	static_assert(is_sequence_v<X>, "");
+};
+
+template <typename X>
+using get_size_t = typename get_size<X>::type;
+
+template <typename X>
+constexpr size_t get_size_v = get_size<X>::value;
 
 
 // get_element
@@ -338,12 +399,11 @@ template <typename X, size_t I>
 struct get_element
 {
 	static_assert(is_sequence_v<X>, "");
-	// TODO
-	//typedef __reflexpr_element(typename X::_container) type;
+	typedef __reflexpr_element(X, I) type;
 };
 
-//template <typename X, size_t I>
-//using get_element_t = typename get_element<X, I>::type;
+template <typename X, size_t I>
+using get_element_t = typename get_element<X, I>::type;
 
 } // namespace meta
 } // namespace std

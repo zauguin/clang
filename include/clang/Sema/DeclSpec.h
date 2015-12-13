@@ -403,7 +403,8 @@ private:
             T == TST_underlyingType || T == TST_atomic);
   }
   static bool isExprRep(TST T) {
-    return (T == TST_typeofExpr || T == TST_decltype || T == TST_reflexpr); // Mirror
+    return (T == TST_typeofExpr || T == TST_decltype ||
+            T == TST_reflexpr || T == TST_reflexprElement); // Mirror
   }
 
   DeclSpec(const DeclSpec &) = delete;

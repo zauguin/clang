@@ -1266,17 +1266,23 @@ void ExprEngine::Visit(const Stmt *S, ExplodedNode *Pred,
       break;
 
     // Mirror
-    case Stmt::ReflexprOperandExprClass:
+    case Stmt::ReflexprExprClass:
       Bldr.takeNodes(Pred);
-      VisitReflexprOperandExpr(cast<ReflexprOperandExpr>(S), Pred, Dst);
+      VisitReflexprExpr(cast<ReflexprExpr>(S), Pred, Dst);
       Bldr.addNodes(Dst);
       break;
 
     // Mirror
-    case Stmt::ReflexprElementOperandExprClass:
+    case Stmt::ReflexprSizeExprClass:
       Bldr.takeNodes(Pred);
-      VisitReflexprElementOperandExpr(cast<ReflexprElementOperandExpr>(S),
-                                      Pred, Dst);
+      VisitReflexprSizeExpr(cast<ReflexprSizeExpr>(S), Pred, Dst);
+      Bldr.addNodes(Dst);
+      break;
+
+    // Mirror
+    case Stmt::ReflexprElementExprClass:
+      Bldr.takeNodes(Pred);
+      VisitReflexprElementExpr(cast<ReflexprElementExpr>(S), Pred, Dst);
       Bldr.addNodes(Dst);
       break;
 

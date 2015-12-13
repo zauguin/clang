@@ -2121,13 +2121,18 @@ DEF_TRAVERSE_STMT(OffsetOfExpr, {
 })
 
 // Mirror
-DEF_TRAVERSE_STMT(ReflexprOperandExpr, {
+DEF_TRAVERSE_STMT(ReflexprExpr, {
   if (S->isType())
     TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
 })
 
 // Mirror
-DEF_TRAVERSE_STMT(ReflexprElementOperandExpr, {
+DEF_TRAVERSE_STMT(ReflexprSizeExpr, {
+  TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
+})
+
+// Mirror
+DEF_TRAVERSE_STMT(ReflexprElementExpr, {
 /* Mirror TODO
   if (S->isType())
     TRY_TO(TraverseTypeLoc(S->getTypeInfo()->getTypeLoc()));
