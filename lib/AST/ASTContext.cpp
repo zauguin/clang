@@ -4665,6 +4665,9 @@ QualType ASTContext::getMetaVariable(const ValueDecl* var_decl) {
   // add source file, line column, etc.
   addMetaobjectSourceInfo(mo_decl, var_decl, loc);
 
+  // is_class_member
+  addMetaobjectBoolTrait(mo_decl, "_is_cls_mem", true, loc);
+
   // name
   addMetaobjectCTString(mo_decl, "_base_name", var_decl->getName(), loc);
 

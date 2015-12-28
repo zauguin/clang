@@ -9,7 +9,7 @@ namespace std {
 // is_metaobject
 template <typename X>
 struct is_metaobject
- : std::integral_constant<bool, __is_metaobject(X)>
+ : integral_constant<bool, __is_metaobject(X)>
 { };
 
 template <typename X>
@@ -44,14 +44,14 @@ struct __reflexpr_do_make_string;
 template <typename S, typename IS>
 struct __reflexpr_create_string;
 
-template <typename S, std::size_t ... I>
-struct __reflexpr_create_string<S, std::index_sequence<I...>>
+template <typename S, size_t ... I>
+struct __reflexpr_create_string<S, index_sequence<I...>>
  : __reflexpr_string<S::_str[I]...>
 { };
 
-template <typename S, std::size_t N>
+template <typename S, size_t N>
 struct __reflexpr_do_make_string<S, const char[N]>
- : __reflexpr_create_string<S, std::make_index_sequence<N>>
+ : __reflexpr_create_string<S, make_index_sequence<N>>
 { };
 
 template <typename S>
@@ -95,7 +95,7 @@ struct has_category;
 
 template <typename X, unsigned B>
 struct has_category<X, __reflexpr_mo_category<B>>
- : std::integral_constant<bool, (X::_cat_bits & B) == B>
+ : integral_constant<bool, (X::_cat_bits & B) == B>
 { };
 
 template <typename X, typename C>
@@ -143,7 +143,7 @@ constexpr bool is_variable_v = is_variable<X>::value;
 // is_specifier
 template <typename X>
 struct is_specifier
- : std::integral_constant<bool, X::_is_spcfr>
+ : integral_constant<bool, X::_is_spcfr>
 { };
 
 template <typename X>
@@ -156,7 +156,7 @@ constexpr bool is_specifier_v = is_specifier<X>::value;
 // is_sequence
 template <typename X>
 struct is_sequence
- : std::integral_constant<bool, X::_is_seq>
+ : integral_constant<bool, X::_is_seq>
 { };
 
 template <typename X>
@@ -170,7 +170,7 @@ constexpr bool is_sequence_v = is_sequence<X>::value;
 // has_type
 template <typename X>
 struct has_type
- : std::integral_constant<bool, X::_has_type>
+ : integral_constant<bool, X::_has_type>
 { };
 
 template <typename X>
@@ -196,7 +196,7 @@ using get_type_t = typename get_type<X>::type;
 // has_name
 template <typename X>
 struct has_name
- : std::integral_constant<bool, X::_has_name>
+ : integral_constant<bool, X::_has_name>
 { };
 
 template <typename X>
@@ -230,7 +230,7 @@ constexpr auto& get_keyword_v = get_keyword<X>::value;
 // has_scope
 template <typename X>
 struct has_scope
- : std::integral_constant<bool, X::_has_scope>
+ : integral_constant<bool, X::_has_scope>
 { };
 
 template <typename X>
@@ -242,7 +242,7 @@ constexpr bool has_scope_v = has_scope<X>::value;
 // is_scope
 template <typename X>
 struct is_scope
- : std::integral_constant<bool, X::_is_scope>
+ : integral_constant<bool, X::_is_scope>
 { };
 
 template <typename X>
@@ -275,7 +275,7 @@ constexpr auto& source_file_v = source_file<X>::value;
 // source_line
 template <typename X>
 struct source_line 
- : std::integral_constant<unsigned, X::_src_line>
+ : integral_constant<unsigned, X::_src_line>
 { };
 
 template <typename X>
@@ -287,7 +287,7 @@ constexpr unsigned source_line_v = source_line<X>::value;
 // source_column
 template <typename X>
 struct source_column
- : std::integral_constant<unsigned, X::_src_column>
+ : integral_constant<unsigned, X::_src_column>
 { };
 
 template <typename X>
@@ -311,7 +311,7 @@ using get_reflected_type_t = typename get_reflected_type<X>::type;
 // is_alias
 template <typename X>
 struct is_alias
- : std::integral_constant<bool, X::_is_alias>
+ : integral_constant<bool, X::_is_alias>
 { };
 
 template <typename X>
@@ -342,6 +342,20 @@ struct get_typedef_type
 
 template <typename X>
 using get_typedef_type_t = typename get_typedef_type<X>::type;
+
+
+// is_class_member
+template <typename X>
+struct is_class_member
+ : integral_constant<bool, X::_is_cls_mem>
+{ };
+
+template <typename X>
+using is_class_member_t = typename is_class_member<X>::type;
+
+template <typename X>
+constexpr bool is_class_member_v = is_class_member<X>::value;
+
 
 // get_elaborated_type_specifier
 template <typename X>
@@ -382,7 +396,7 @@ using get_all_data_members_t = typename get_all_data_members<X>::type;
 // get_size
 template <typename X>
 struct get_size
- : std::integral_constant<size_t, __reflexpr_size(X)>
+ : integral_constant<size_t, __reflexpr_size(X)>
 {
 	static_assert(is_sequence_v<X>, "");
 };

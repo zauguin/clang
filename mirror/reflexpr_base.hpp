@@ -14,6 +14,7 @@ struct __reflexpr_metaobject
 	static constexpr const bool _is_scope = false;
 	static constexpr const bool _is_alias = false;
 	static constexpr const bool _is_seq = false;
+	static constexpr const bool _is_cls_mem = false;
 };
 
 struct __reflexpr_moseq_base
