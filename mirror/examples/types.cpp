@@ -21,5 +21,8 @@ int main(void)
 	cout << meta::get_name_v<meta_unsigned> << endl;
 	// prints "unsigned int"
 
+	typedef reflexpr(unsigned*) meta_ptr_unsigned;
+	cout << meta::get_name_v<meta_ptr_unsigned> << endl;
+
 	return 0;
 }

@@ -29,7 +29,7 @@ int main(void)
 	// prints "baz"
 
 	// getting the reflected typedef foo::bar
-	typedef meta::get_typedef_type_t<meta_foo_baz> meta_foo_bar;
+	typedef meta::get_aliased_t<meta_foo_baz> meta_foo_bar;
 
 	static_assert(is_metaobject_v<meta_foo_bar>, "");
 	static_assert(meta::is_type_v<meta_foo_bar>, "");

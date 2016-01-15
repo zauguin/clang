@@ -332,16 +332,31 @@ struct get_aliased
 template <typename X>
 using get_aliased_t = typename get_aliased<X>::type;
 
-// get_typedef_type
+
+// is_linkable
 template <typename X>
-struct get_typedef_type
- : get_aliased<X>
-{
-	static_assert(is_type_v<X>, "");
-};
+struct is_linkable
+ : integral_constant<bool, X::_is_lnkable>
+{ };
 
 template <typename X>
-using get_typedef_type_t = typename get_typedef_type<X>::type;
+using is_linkable_t = typename is_linkable<X>::type;
+
+template <typename X>
+constexpr bool is_linkable_v = is_linkable<X>::value;
+
+
+// is_static
+template <typename X>
+struct is_static
+ : integral_constant<bool, X::_is_static>
+{ };
+
+template <typename X>
+using is_static_t = typename is_static<X>::type;
+
+template <typename X>
+constexpr bool is_static_v = is_static<X>::value;
 
 
 // is_class_member
@@ -355,6 +370,19 @@ using is_class_member_t = typename is_class_member<X>::type;
 
 template <typename X>
 constexpr bool is_class_member_v = is_class_member<X>::value;
+
+
+// is_public
+template <typename X>
+struct is_public
+ : integral_constant<bool, X::_is_public>
+{ };
+
+template <typename X>
+using is_public_t = typename is_public<X>::type;
+
+template <typename X>
+constexpr bool is_public_v = is_public<X>::value;
 
 
 // get_elaborated_type_specifier

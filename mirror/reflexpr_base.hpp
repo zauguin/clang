@@ -13,8 +13,9 @@ struct __reflexpr_metaobject
 	static constexpr const bool _has_scope = false;
 	static constexpr const bool _is_scope = false;
 	static constexpr const bool _is_alias = false;
-	static constexpr const bool _is_seq = false;
 	static constexpr const bool _is_cls_mem = false;
+	static constexpr const bool _is_lnkable = false;
+	static constexpr const bool _is_seq = false;
 };
 
 struct __reflexpr_moseq_base
@@ -57,6 +58,7 @@ struct __reflexpr_meta_var_base
 	static constexpr const unsigned _cat_bits = 0x00000100;
 	static constexpr const bool _has_name = true;
 	static constexpr const bool _has_type = true;
+	static constexpr const bool _is_lnkable = true;
 };
 
 #endif

@@ -4180,14 +4180,14 @@ std::string ASTContext::makeMetaTypeName(QualType rt) {
 }
 
 // Mirror
-std::string ASTContext::makeMetaVariableName(const ValueDecl* var_decl) {
+std::string ASTContext::makeMetaVariableName(const ValueDecl* val_decl) {
 
   std::string result("__reflexpr_mvar");
 
   std::hash<std::string> hshf;
 
   // Mirror TODO: 
-  result.append(std::to_string(hshf(var_decl->getQualifiedNameAsString())));
+  result.append(std::to_string(hshf(val_decl->getQualifiedNameAsString())));
 
   return result;
 }
@@ -4469,7 +4469,7 @@ QualType ASTContext::getMetaNamespace(const NamedDecl* ns_decl) {
   return finalizeMetaobject(mo_decl);
 }
 // Mirror
- 
+
 // Mirror
 QualType ASTContext::getMetaType(QualType ReflectedType) {
 
@@ -4514,6 +4514,25 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
     rt_decl = rt_ttpt->getDecl();
   }
 
+  // basic reflected type (with stripped pointers/references)
+  QualType brt = rt;
+  while(!brt->getPointeeType().isNull()) {
+    brt = brt->getPointeeType();
+  }
+
+  // try to find the declaration of the basic reflected type
+  const Decl* brt_decl = nullptr;
+  if(const TypedefType* rt_bt = dyn_cast<TypedefType>(brt)) {
+    brt_decl = rt_bt->getDecl();
+  } else if (const TagType* rt_tt = dyn_cast<TagType>(brt)) {
+    brt_decl = rt_tt->getDecl();
+  } else if (const SubstTemplateTypeParmType* rt_sttpt =
+    dyn_cast<SubstTemplateTypeParmType>(brt)) {
+    brt_decl = rt_sttpt->getReplacedParameter()->getDecl();
+  } else if (const TemplateTypeParmType* rt_ttpt =
+    dyn_cast<TemplateTypeParmType>(brt)) {
+    brt_decl = rt_ttpt->getDecl();
+  }
 
   // Invalid source location since the metaobject is generated
   SourceLocation loc;
@@ -4528,6 +4547,8 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
 
   // add source file, line column, etc.
   addMetaobjectSourceInfo(mo_decl, rt_decl, loc);
+
+  bool has_name = false;
 
 
   // scope and name
@@ -4598,12 +4619,12 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
       addMetaobjectBoolTrait(mo_decl, "_has_scope", mo_has_scope_v, loc);
     }
 
-    if(const NamedDecl* ro_nd = dyn_cast<NamedDecl>(rt_decl)) {
+    if(const NamedDecl* ro_nd = dyn_cast<NamedDecl>(brt_decl)) {
       addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
       addMetaobjectCTString(mo_decl, "_base_name", ro_nd->getName(), loc);
-
+      has_name = true;
     }
-  } else if (const BuiltinType* rt_bt = dyn_cast<BuiltinType>(rt)) {
+  } else if (const BuiltinType* rt_bt = dyn_cast<BuiltinType>(brt)) {
 
     addMetaobjectBoolTrait(mo_decl, "_has_scope", true, loc);
     addMetaobjectTypedef(mo_decl, "_scope", getMetaGlobalScope(), loc);
@@ -4613,13 +4634,18 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
                           "_base_name",
                           rt_bt->getName(getPrintingPolicy()),
                           loc);
-  } else if (ReflectedType.getBaseTypeIdentifier()) {
+    has_name = true;
+  }
+
+  // last shot on getting the type name
+  if (!has_name && brt.getBaseTypeIdentifier()) {
 
     addMetaobjectBoolTrait(mo_decl, "_has_name", true, loc);
     addMetaobjectCTString(mo_decl,
                           "_base_name",
-                          ReflectedType.getBaseTypeIdentifier(),
+                          brt.getBaseTypeIdentifier(),
                           loc);
+    has_name = true;
   }
 
   // typedef _orig_type
@@ -4639,12 +4665,13 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
 // Mirror
 
 // Mirror
-QualType ASTContext::getMetaVariable(const ValueDecl* var_decl) {
+QualType ASTContext::getMetaVariable(const ValueDecl* val_decl) {
 
-  assert(var_decl != nullptr);
+  assert(val_decl != nullptr);
+  const VarDecl* var_decl = dyn_cast<VarDecl>(val_decl);
 
   // metaobject name
-  IdentifierInfo& mo_ident = Idents.get(makeMetaVariableName(var_decl));
+  IdentifierInfo& mo_ident = Idents.get(makeMetaVariableName(val_decl));
 
   // try to find any previous declarations of this metaobject
   CXXRecordDecl* mo_decl = lookupPrevMetaobjectDecl(mo_ident);
@@ -4663,20 +4690,21 @@ QualType ASTContext::getMetaVariable(const ValueDecl* var_decl) {
   addMetaobjectInjectDecl(mo_decl, mo_ident, loc);
 
   // add source file, line column, etc.
-  addMetaobjectSourceInfo(mo_decl, var_decl, loc);
+  addMetaobjectSourceInfo(mo_decl, val_decl, loc);
 
   // is_class_member
   addMetaobjectBoolTrait(mo_decl, "_is_cls_mem", true, loc);
 
   // name
-  addMetaobjectCTString(mo_decl, "_base_name", var_decl->getName(), loc);
+  addMetaobjectCTString(mo_decl, "_base_name", val_decl->getName(), loc);
 
   // type
-  addMetaobjectTypedef(mo_decl, "_type", getMetaType(var_decl->getType()), loc);
+  addMetaobjectTypedef(mo_decl, "_type", getMetaType(val_decl->getType()), loc);
 
-  // Mirror TODO: storage class specifier
-  // Mirror TODO: access specifier
-  // Mirror TODO: class member trait
+  addMetaobjectBoolTrait(mo_decl, "_is_static",
+                         var_decl && var_decl->isStaticDataMember(), loc);
+  addMetaobjectBoolTrait(mo_decl, "_is_public",
+                         val_decl->getAccess() == AS_public, loc);
 
   // the category
   addMetaobjectUIntTrait(mo_decl, "_cat_bits", reflexprVariableTag, loc);

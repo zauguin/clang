@@ -23,6 +23,10 @@ int do_print_data_member(void)
 	typedef meta::get_element_t<Metaobjects, I> metaobj;
 
 	cout	<< I << ": "
+		<< (meta::is_public_v<metaobj>?"public":"non-public")
+		<< " "
+		<< (meta::is_static_v<metaobj>?"static":"")
+		<< " "
 		<< meta::get_name_v<meta::get_type_t<metaobj>>
 		<< " "
 		<< meta::get_name_v<metaobj>
