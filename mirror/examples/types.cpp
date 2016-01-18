@@ -22,6 +22,7 @@ int main(void)
 	// prints "unsigned int"
 
 	typedef reflexpr(unsigned*) meta_ptr_unsigned;
+	static_assert(meta::has_name_v<meta_ptr_unsigned>, "");
 	cout << meta::get_name_v<meta_ptr_unsigned> << endl;
 
 	return 0;

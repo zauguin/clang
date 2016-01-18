@@ -1,10 +1,14 @@
-template <unsigned I>
 struct foo
 {
-	static constexpr const unsigned value = I;
+	int x;
+};
+
+struct bar
+{
+	static constexpr int foo::*px = &foo::x;
 };
 
 int main(void)
 {
-	return foo<0>::value;
+	return sizeof(bar);
 }

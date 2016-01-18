@@ -24,7 +24,7 @@ int main(void)
 	static_assert(is_metaobject_v<meta_data_mems>, "");
 	static_assert(meta::is_sequence_v<meta_data_mems>, "");
 
-	std::cout << meta::get_size_v<meta_data_mems> << std::endl;
+	cout << meta::get_size_v<meta_data_mems> << endl;
 
 	// 0-th (public) data member
 	typedef meta::get_element_t<meta_data_mems, 0> meta_data_mem0;
@@ -33,7 +33,7 @@ int main(void)
 	static_assert(meta::is_variable_v<meta_data_mem0>, "");
 	static_assert(meta::has_type_v<meta_data_mem0>, "");
 
-	std::cout << meta::get_name_v<meta_data_mem0> << std::endl;
+	cout << meta::get_name_v<meta_data_mem0> << endl;
 
 	// 2-nd (public) data member
 	typedef meta::get_element_t<meta_data_mems, 2> meta_data_mem2;
@@ -42,7 +42,7 @@ int main(void)
 	static_assert(meta::is_variable_v<meta_data_mem2>, "");
 	static_assert(meta::has_type_v<meta_data_mem2>, "");
 
-	std::cout << meta::get_name_v<meta_data_mem2> << std::endl;
+	cout << meta::get_name_v<meta_data_mem2> << endl;
 
 	// all data members
 	typedef meta::get_all_data_members_t<meta_foo> meta_all_data_mems;
@@ -50,7 +50,7 @@ int main(void)
 	static_assert(is_metaobject_v<meta_all_data_mems>, "");
 	static_assert(meta::is_sequence_v<meta_all_data_mems>, "");
 
-	std::cout << meta::get_size_v<meta_all_data_mems> << std::endl;
+	cout << meta::get_size_v<meta_all_data_mems> << endl;
 
 	// 0-th (overall) data member
 	typedef meta::get_element_t<meta_all_data_mems, 0> meta_all_data_mem0;
@@ -59,7 +59,7 @@ int main(void)
 	static_assert(meta::is_variable_v<meta_all_data_mem0>, "");
 	static_assert(meta::has_type_v<meta_all_data_mem0>, "");
 
-	std::cout << meta::get_name_v<meta_all_data_mem0> << std::endl;
+	cout << meta::get_name_v<meta_all_data_mem0> << endl;
 
 	// 3-rd (overall) data member
 	typedef meta::get_element_t<meta_all_data_mems, 3> meta_all_data_mem3;
@@ -68,7 +68,7 @@ int main(void)
 	static_assert(meta::is_variable_v<meta_all_data_mem3>, "");
 	static_assert(meta::has_type_v<meta_all_data_mem3>, "");
 
-	std::cout << meta::get_name_v<meta_all_data_mem3> << std::endl;
+	cout << meta::get_name_v<meta_all_data_mem3> << endl;
 
 	return 0;
 }

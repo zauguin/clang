@@ -4,7 +4,7 @@
 namespace foo {
 
 typedef int bar;
-typedef bar baz;
+using baz = bar;
 
 } // namespace foo
 
