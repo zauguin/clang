@@ -263,38 +263,38 @@ struct get_scope
 template <typename X>
 using get_scope_t = typename get_scope<X>::type;
 
-// source_file
+// get_source_file
 template <typename X>
-struct source_file
+struct get_source_file
  : __reflexpr_make_string<typename X::_src_file>
 { };
 
 template <typename X>
-constexpr auto& source_file_v = source_file<X>::value;
+constexpr auto& get_source_file_v = get_source_file<X>::value;
 
-// source_line
+// get_source_line
 template <typename X>
-struct source_line 
+struct get_source_line 
  : integral_constant<unsigned, X::_src_line>
 { };
 
 template <typename X>
-using source_line_t = typename source_line<X>::type;
+using get_source_line_t = typename get_source_line<X>::type;
 
 template <typename X>
-constexpr unsigned source_line_v = source_line<X>::value;
+constexpr unsigned get_source_line_v = get_source_line<X>::value;
 
-// source_column
+// get_source_column
 template <typename X>
-struct source_column
+struct get_source_column
  : integral_constant<unsigned, X::_src_column>
 { };
 
 template <typename X>
-using source_column_t = typename source_column<X>::type;
+using get_source_column_t = typename get_source_column<X>::type;
 
 template <typename X>
-constexpr unsigned source_column_v = source_column<X>::value;
+constexpr unsigned get_source_column_v = get_source_column<X>::value;
 
 // get_reflected_type
 template <typename X>
