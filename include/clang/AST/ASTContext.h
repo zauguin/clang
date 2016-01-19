@@ -1395,7 +1395,7 @@ public:
   QualType getMetaType(QualType ReflectedType);
 
   // Mirror
-  QualType getMetaVariable(const ValueDecl* var_decl);
+  QualType getMetaDataMember(const RecordType*, const ValueDecl* var_decl);
 
   // Mirror
   unsigned getMetaClassMemberCount(const RecordDecl* rec_decl,
@@ -1407,7 +1407,8 @@ public:
   unsigned getMetaobjectSequenceSize(QualType MoSeqType);
 
   // Mirror
-  QualType getMetaClassMemberElement(const RecordDecl* rec_decl,
+  QualType getMetaClassMemberElement(const RecordType* rec_type,
+                                     const RecordDecl* rec_decl,
                                      MetaobjectSequenceKind seq_kind,
                                      unsigned index);
 

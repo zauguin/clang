@@ -447,6 +447,15 @@ struct get_element
 template <typename X, size_t I>
 using get_element_t = typename get_element<X, I>::type;
 
+// get_pointer
+template <typename X>
+struct get_pointer
+{
+	static_assert(is_variable_v<X>, "");
+
+	typedef typename X::_ptr_type value_type;
+};
+
 } // namespace meta
 } // namespace std
 

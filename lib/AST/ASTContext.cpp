@@ -4665,7 +4665,8 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
 // Mirror
 
 // Mirror
-QualType ASTContext::getMetaVariable(const ValueDecl* val_decl) {
+QualType ASTContext::getMetaDataMember(const RecordType* rec_type,
+                                       const ValueDecl* val_decl) {
 
   assert(val_decl != nullptr);
   const VarDecl* var_decl = dyn_cast<VarDecl>(val_decl);
@@ -4701,8 +4702,22 @@ QualType ASTContext::getMetaVariable(const ValueDecl* val_decl) {
   // type
   addMetaobjectTypedef(mo_decl, "_type", getMetaType(val_decl->getType()), loc);
 
-  addMetaobjectBoolTrait(mo_decl, "_is_static",
-                         var_decl && var_decl->isStaticDataMember(), loc);
+  bool is_static = var_decl && var_decl->isStaticDataMember();
+
+  // pointer type
+  if(is_static) {
+    addMetaobjectTypedef(mo_decl, "_ptr_type",
+                         getPointerType(val_decl->getType()),
+                         loc);
+  } else {
+    addMetaobjectTypedef(mo_decl, "_ptr_type",
+                         getMemberPointerType(val_decl->getType(), rec_type),
+                         loc);
+  }
+
+  // is_static
+  addMetaobjectBoolTrait(mo_decl, "_is_static", is_static, loc);
+  // is_public
   addMetaobjectBoolTrait(mo_decl, "_is_public",
                          val_decl->getAccess() == AS_public, loc);
 
@@ -4797,7 +4812,8 @@ unsigned ASTContext::getMetaobjectSequenceSize(QualType MoSeqType) {
 }
 
 // Mirror
-QualType ASTContext::getMetaClassMemberElement(const RecordDecl* rec_decl,
+QualType ASTContext::getMetaClassMemberElement(const RecordType* rec_type,
+                                               const RecordDecl* rec_decl,
                                                MetaobjectSequenceKind seq_kind,
                                                unsigned index) {
 
@@ -4815,12 +4831,12 @@ QualType ASTContext::getMetaClassMemberElement(const RecordDecl* rec_decl,
       if(seq_kind == MoSK_PubClassDataMembers) {
         if(i->getAccess() == AS_public) {
           if(index-- == 0) {
-            return getMetaVariable(dyn_cast<ValueDecl>(*i));
+            return getMetaDataMember(rec_type, dyn_cast<ValueDecl>(*i));
           }
         }
       } else if (seq_kind == MoSK_AllClassDataMembers) {
         if(index-- == 0) {
-            return getMetaVariable(dyn_cast<ValueDecl>(*i));
+            return getMetaDataMember(rec_type, dyn_cast<ValueDecl>(*i));
         }
       }
     }
@@ -4846,7 +4862,7 @@ QualType ASTContext::getMetaClassElementType(const CXXRecordDecl* mc_decl,
         switch(seq_kind) {
           case MoSK_PubClassDataMembers:
           case MoSK_AllClassDataMembers:
-            return getMetaClassMemberElement(rec_decl, seq_kind, index);
+            return getMetaClassMemberElement(rt, rec_decl, seq_kind, index);
           case MoSK_EnumMembers:
           case MoSK_None:
             llvm_unreachable("Unsupported MetaobjectSequence kind!");
