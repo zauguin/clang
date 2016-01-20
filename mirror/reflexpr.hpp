@@ -130,11 +130,17 @@ template <typename X>
 using is_class = has_category<X, class_tag>;
 
 template <typename X>
+using is_class_t = typename is_class<X>::type;
+
+template <typename X>
 constexpr bool is_class_v = is_class<X>::value;
 
 // is_variable
 template <typename X>
 using is_variable = has_category<X, variable_tag>;
+
+template <typename X>
+using is_variable_t = typename is_variable<X>::type;
 
 template <typename X>
 constexpr bool is_variable_v = is_variable<X>::value;
@@ -454,6 +460,8 @@ struct get_pointer
 	static_assert(is_variable_v<X>, "");
 
 	typedef typename X::_ptr_type value_type;
+
+	static constexpr const value_type value = X::_ptr;
 };
 
 } // namespace meta

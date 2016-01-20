@@ -4703,23 +4703,56 @@ QualType ASTContext::getMetaDataMember(const RecordType* rec_type,
   addMetaobjectTypedef(mo_decl, "_type", getMetaType(val_decl->getType()), loc);
 
   bool is_static = var_decl && var_decl->isStaticDataMember();
-
-  // pointer type
-  if(is_static) {
-    addMetaobjectTypedef(mo_decl, "_ptr_type",
-                         getPointerType(val_decl->getType()),
-                         loc);
-  } else {
-    addMetaobjectTypedef(mo_decl, "_ptr_type",
-                         getMemberPointerType(val_decl->getType(), rec_type),
-                         loc);
-  }
+  bool is_public = val_decl->getAccess() == AS_public;
 
   // is_static
   addMetaobjectBoolTrait(mo_decl, "_is_static", is_static, loc);
   // is_public
-  addMetaobjectBoolTrait(mo_decl, "_is_public",
-                         val_decl->getAccess() == AS_public, loc);
+  addMetaobjectBoolTrait(mo_decl, "_is_public", is_public, loc);
+
+  QualType var_ptr_type;
+
+  // pointer type
+  if(is_static) {
+    var_ptr_type = getPointerType(val_decl->getType());
+  } else {
+    var_ptr_type = getMemberPointerType(val_decl->getType(), rec_type);
+  }
+  addMetaobjectTypedef(mo_decl, "_ptr_type", var_ptr_type, loc);
+
+  // pointer
+  VarDecl* var_ptr_decl = VarDecl::Create(*this, mo_decl,
+                                         loc, loc,
+                                         &Idents.get("_ptr"),
+                                         getConstType(var_ptr_type),
+                                         getTrivialTypeSourceInfo(var_ptr_type),
+                                         SC_Static);
+
+  var_ptr_decl->setAccess(AS_public);
+  if(!is_static) {
+    var_ptr_decl->setConstexpr(true);
+  }
+
+  Expr* var_decl_ref_expr = DeclRefExpr::Create(*this,
+                                               NestedNameSpecifierLoc(),
+                                               loc,
+                                               const_cast<ValueDecl*>(val_decl),
+                                               false,
+                                               loc,
+                                               getConstType(var_ptr_type),
+                                               VK_LValue,
+                                               const_cast<ValueDecl*>(val_decl),
+                                               nullptr);
+
+  Expr* var_ptr_init = new(*this) UnaryOperator(var_decl_ref_expr,
+                                                UO_AddrOf,
+                                                var_ptr_type,
+                                                VK_RValue,
+                                                OK_Ordinary,
+                                                loc);
+
+  var_ptr_decl->setInit(var_ptr_init);
+  mo_decl->addDecl(var_ptr_decl);
 
   // the category
   addMetaobjectUIntTrait(mo_decl, "_cat_bits", reflexprVariableTag, loc);
