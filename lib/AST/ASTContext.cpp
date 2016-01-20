@@ -4119,6 +4119,34 @@ void ASTContext::addMetaobjectInjectDecl(CXXRecordDecl* mo_decl,
 }
 
 // Mirror
+const NamedDecl* ASTContext::getReflectedTypeDecl(QualType rt,
+                                                  QualType* rt_tdt) {
+
+  if(const TypedefType* rt_bt = dyn_cast<TypedefType>(rt)) {
+
+    if(rt_tdt) *rt_tdt = rt_bt->desugar();
+    return rt_bt->getDecl();
+
+  } else if (const TagType* rt_tt = dyn_cast<TagType>(rt)) {
+
+    return rt_tt->getDecl();
+
+  } else if (const SubstTemplateTypeParmType* rt_sttpt =
+    dyn_cast<SubstTemplateTypeParmType>(rt)) {
+
+    if(rt_tdt) *rt_tdt = rt_sttpt->getReplacementType();
+    return rt_sttpt->getReplacedParameter()->getDecl();
+
+  } else if (const TemplateTypeParmType* rt_ttpt =
+    dyn_cast<TemplateTypeParmType>(rt)) {
+
+    return rt_ttpt->getDecl();
+  }
+  return nullptr;
+}
+// Mirror
+
+// Mirror
 std::string ASTContext::makeMetaSpecifierName(const StringRef& spec_kw) {
 
   std::string result("__reflexpr_mspc_");
@@ -4152,18 +4180,7 @@ std::string ASTContext::makeMetaTypeName(QualType rt) {
 
   std::size_t hshv = hshf(rt.getAsString());
 
-  const NamedDecl* rt_decl = nullptr;
-  if(const TypedefType* rt_tdt = dyn_cast<TypedefType>(rt)) {
-    rt_decl = rt_tdt->getDecl();
-  } else if (const TagType* rt_tt = dyn_cast<TagType>(rt)) {
-    rt_decl = rt_tt->getDecl();
-  } else if (const SubstTemplateTypeParmType* rt_sttpt =
-    dyn_cast<SubstTemplateTypeParmType>(rt)) {
-    rt_decl = rt_sttpt->getReplacedParameter()->getDecl();
-  } else if (const TemplateTypeParmType* rt_ttpt =
-    dyn_cast<TemplateTypeParmType>(rt)) {
-    rt_decl = rt_ttpt->getDecl();
-  }
+  const NamedDecl* rt_decl = getReflectedTypeDecl(rt);
 
   if(rt_decl != nullptr) {
     hshv ^= hshf(rt_decl->getName()) << 1;
@@ -4489,6 +4506,7 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
 
   QualType rt = ReflectedType;
   QualType rt_tdt; // typedef type (if any)
+  QualType mt_tdt; // reflected typedef type (if any)
 
   // TODO: This is just for debugging it can be removed later
   Type::TypeClass tc = rt->getTypeClass();
@@ -4499,19 +4517,9 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
   }
 
   // try to find the declaration of the reflected type
-  const Decl* rt_decl = nullptr;
-  if(const TypedefType* rt_bt = dyn_cast<TypedefType>(rt)) {
-    rt_decl = rt_bt->getDecl();
-    rt_tdt = getMetaType(rt_bt->desugar());
-  } else if (const TagType* rt_tt = dyn_cast<TagType>(rt)) {
-    rt_decl = rt_tt->getDecl();
-  } else if (const SubstTemplateTypeParmType* rt_sttpt =
-    dyn_cast<SubstTemplateTypeParmType>(rt)) {
-    rt_decl = rt_sttpt->getReplacedParameter()->getDecl();
-    rt_tdt = getMetaType(rt_sttpt->getReplacementType());
-  } else if (const TemplateTypeParmType* rt_ttpt =
-    dyn_cast<TemplateTypeParmType>(rt)) {
-    rt_decl = rt_ttpt->getDecl();
+  const Decl* rt_decl = getReflectedTypeDecl(rt, &rt_tdt);
+  if(!rt_tdt.isNull()) {
+    mt_tdt = getMetaType(rt_tdt);
   }
 
   // basic reflected type (with stripped pointers/references)
@@ -4521,18 +4529,7 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
   }
 
   // try to find the declaration of the basic reflected type
-  const Decl* brt_decl = nullptr;
-  if(const TypedefType* rt_bt = dyn_cast<TypedefType>(brt)) {
-    brt_decl = rt_bt->getDecl();
-  } else if (const TagType* rt_tt = dyn_cast<TagType>(brt)) {
-    brt_decl = rt_tt->getDecl();
-  } else if (const SubstTemplateTypeParmType* rt_sttpt =
-    dyn_cast<SubstTemplateTypeParmType>(brt)) {
-    brt_decl = rt_sttpt->getReplacedParameter()->getDecl();
-  } else if (const TemplateTypeParmType* rt_ttpt =
-    dyn_cast<TemplateTypeParmType>(brt)) {
-    brt_decl = rt_ttpt->getDecl();
-  }
+  const Decl* brt_decl = getReflectedTypeDecl(brt, nullptr);
 
   // Invalid source location since the metaobject is generated
   SourceLocation loc;
@@ -4652,9 +4649,9 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
   addMetaobjectTypedef(mo_decl, "_orig_type", ReflectedType, loc);
 
   // typedef _aliased
-  if(!rt_tdt.isNull()) {
+  if(!mt_tdt.isNull()) {
     addMetaobjectBoolTrait(mo_decl, "_is_alias", true, loc);
-    addMetaobjectTypedef(mo_decl, "_aliased", rt_tdt, loc);
+    addMetaobjectTypedef(mo_decl, "_aliased", mt_tdt, loc);
   }
 
   // the category

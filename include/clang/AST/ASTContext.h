@@ -1341,6 +1341,9 @@ public:
                              SourceLocation loc);
 
   // Mirror
+  const NamedDecl* getReflectedTypeDecl(QualType, QualType* = nullptr);
+
+  // Mirror
   std::string makeMetaSpecifierName(const StringRef& spec_kw);
   // Mirror
   std::string makeMetaNamespaceName(const NamedDecl* ns_decl);
