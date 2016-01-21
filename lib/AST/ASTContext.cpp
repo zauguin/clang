@@ -4145,6 +4145,37 @@ const NamedDecl* ASTContext::getReflectedTypeDecl(QualType rt,
   return nullptr;
 }
 // Mirror
+QualType ASTContext::getMetaTypeDeclOrigType(const CXXRecordDecl* mc_decl) {
+
+  QualType orig_type =
+    lookupMoMemberTypedefType(mc_decl, Idents.get("_orig_type"));
+
+  if(!orig_type.isNull()) {
+    while(true) {
+
+      // TODO: This is just for debugging it can be removed later
+      Type::TypeClass tc = orig_type->getTypeClass();
+      (void)tc;
+
+      if (const TypedefType* tdt = dyn_cast<TypedefType>(orig_type)) {
+
+        orig_type = tdt->desugar();
+
+      } else if (const SubstTemplateTypeParmType* rt_sttpt =
+        dyn_cast<SubstTemplateTypeParmType>(orig_type)) {
+
+        orig_type = rt_sttpt->getReplacementType();
+
+      } else break;
+    }
+  } else {
+    llvm_unreachable("MetaType::_orig_type is missing");
+  }
+  return orig_type;
+}
+// Mirror
+
+// Mirror
 
 // Mirror
 std::string ASTContext::makeMetaSpecifierName(const StringRef& spec_kw) {
@@ -4244,7 +4275,7 @@ ASTContext::lookupMoMemberMetaobjectDecl(const CXXRecordDecl* mo_decl,
                                          IdentifierInfo& ident) {
 
   QualType tdt = lookupMoMemberTypedefType(mo_decl, ident);
-  if(const RecordType* rt = dyn_cast<RecordType>(tdt.getTypePtr())) {
+  if(const RecordType* rt = dyn_cast<RecordType>(tdt)) {
     if(const CXXRecordDecl* mmo_decl = dyn_cast<CXXRecordDecl>(rt->getDecl())){
       if(mmo_decl->isMetaobject()) {
         return mmo_decl;
@@ -4529,7 +4560,15 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
   }
 
   // try to find the declaration of the basic reflected type
-  const Decl* brt_decl = getReflectedTypeDecl(brt, nullptr);
+  const Decl* brt_decl = getReflectedTypeDecl(brt);
+
+  const Decl* tdt_decl = nullptr;
+  if(!rt_tdt.isNull()) {
+    tdt_decl = getReflectedTypeDecl(rt_tdt);
+  }
+  if(tdt_decl == nullptr) {
+    tdt_decl = rt_decl;
+  }
 
   // Invalid source location since the metaobject is generated
   SourceLocation loc;
@@ -4555,20 +4594,16 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
 
         switch(rt_td->getTagKind()) {
           case TTK_Enum: 
-            mo_category = reflexprEnumTag;
             tag_kw = "enum";
             break;
           case TTK_Class: 
-            mo_category = reflexprClassTag;
             tag_kw = "class";
             break;
           case TTK_Union: 
-            mo_category = reflexprClassTag;
             tag_kw = "union";
             break;
           case TTK_Struct: 
           default:;
-            mo_category = reflexprClassTag;
             tag_kw = "struct";
             break;
         }
@@ -4576,7 +4611,7 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
         addMetaobjectTypedef(mo_decl, "_tag_spc", getMetaSpecifier(tag_kw),loc);
     }
 
-    if(const RecordDecl* rt_rd = dyn_cast<RecordDecl>(rt_decl)) {
+    if(const RecordDecl* rt_rd = dyn_cast<RecordDecl>(tdt_decl)) {
       (void)rt_rd;
       addMetaobjectBoolTrait(mo_decl, "_is_scope", true, loc);
       // public data members
@@ -4585,14 +4620,16 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
       // all data members
       addMetaobjectSequence(mo_decl, "_all_data_mems",
                             MoSK_AllClassDataMembers, loc);
+      mo_category = reflexprClassTag;
     }
 
-    if(const EnumDecl* rt_ed = dyn_cast<EnumDecl>(rt_decl)) {
+    if(const EnumDecl* rt_ed = dyn_cast<EnumDecl>(tdt_decl)) {
       if(rt_ed->isScoped()) {
         addMetaobjectBoolTrait(mo_decl, "_is_scope", true, loc);
       }
       // enum members
       addMetaobjectSequence(mo_decl, "_enum_mems", MoSK_EnumMembers, loc);
+      mo_category = reflexprEnumTag;
     }
 
     bool mo_has_scope_v = false;
@@ -4646,7 +4683,7 @@ QualType ASTContext::getMetaType(QualType ReflectedType) {
   }
 
   // typedef _orig_type
-  addMetaobjectTypedef(mo_decl, "_orig_type", ReflectedType, loc);
+  addMetaobjectTypedef(mo_decl, "_orig_type", rt, loc);
 
   // typedef _aliased
   if(!mt_tdt.isNull()) {
@@ -4794,26 +4831,23 @@ unsigned ASTContext::getMetaClassMemberCount(const RecordDecl* rec_decl,
 unsigned ASTContext::getMetaClassSequenceSize(const CXXRecordDecl* mc_decl,
                                               MetaobjectSequenceKind seq_kind) {
 
-  QualType rec_type =
-    lookupMoMemberTypedefType(mc_decl, Idents.get("_orig_type"));
-  if(!rec_type.isNull()) {
-    if(const RecordType* rt = dyn_cast<RecordType>(rec_type.getTypePtr())) {
+  QualType orig_type = getMetaTypeDeclOrigType(mc_decl);
 
-      if(const RecordDecl* rec_decl = rt->getDecl()) {
+  if(const RecordType* rt = dyn_cast<RecordType>(orig_type)) {
 
-        switch(seq_kind) {
-          case MoSK_PubClassDataMembers:
-          case MoSK_AllClassDataMembers:
-            return getMetaClassMemberCount(rec_decl, seq_kind);
-          case MoSK_EnumMembers:
-          case MoSK_None:
-            llvm_unreachable("Unsupported MetaobjectSequence kind!");
-        }
+    if(const RecordDecl* rec_decl = rt->getDecl()) {
+
+      switch(seq_kind) {
+        case MoSK_PubClassDataMembers:
+        case MoSK_AllClassDataMembers:
+          return getMetaClassMemberCount(rec_decl, seq_kind);
+        case MoSK_EnumMembers:
+        case MoSK_None:
+          llvm_unreachable("Unsupported MetaobjectSequence kind!");
       }
     }
-    llvm_unreachable("MetaType::_orig_type is not a record type");
   }
-  llvm_unreachable("MetaType::_orig_type is missing");
+  llvm_unreachable("MetaType::_orig_type is not a record type");
   return 0;
 }
 
@@ -4882,26 +4916,23 @@ QualType ASTContext::getMetaClassElementType(const CXXRecordDecl* mc_decl,
                                              MetaobjectSequenceKind seq_kind,
                                              unsigned index) {
 
-  QualType rec_type =
-    lookupMoMemberTypedefType(mc_decl, Idents.get("_orig_type"));
-  if(!rec_type.isNull()) {
-    if(const RecordType* rt = dyn_cast<RecordType>(rec_type.getTypePtr())) {
+  QualType orig_type = getMetaTypeDeclOrigType(mc_decl);
 
-      if(const RecordDecl* rec_decl = rt->getDecl()) {
+  if(const RecordType* rt = dyn_cast<RecordType>(orig_type)) {
 
-        switch(seq_kind) {
-          case MoSK_PubClassDataMembers:
-          case MoSK_AllClassDataMembers:
-            return getMetaClassMemberElement(rt, rec_decl, seq_kind, index);
-          case MoSK_EnumMembers:
-          case MoSK_None:
-            llvm_unreachable("Unsupported MetaobjectSequence kind!");
-        }
+    if(const RecordDecl* rec_decl = rt->getDecl()) {
+
+      switch(seq_kind) {
+        case MoSK_PubClassDataMembers:
+        case MoSK_AllClassDataMembers:
+          return getMetaClassMemberElement(rt, rec_decl, seq_kind, index);
+        case MoSK_EnumMembers:
+        case MoSK_None:
+          llvm_unreachable("Unsupported MetaobjectSequence kind!");
       }
     }
-    llvm_unreachable("MetaType::_orig_type is not a record type");
   }
-  llvm_unreachable("MetaType::_orig_type is missing");
+  llvm_unreachable("MetaType::_orig_type is not a record type");
   return QualType();
 }
 

@@ -1344,6 +1344,9 @@ public:
   const NamedDecl* getReflectedTypeDecl(QualType, QualType* = nullptr);
 
   // Mirror
+  QualType getMetaTypeDeclOrigType(const CXXRecordDecl* mc_decl);
+
+  // Mirror
   std::string makeMetaSpecifierName(const StringRef& spec_kw);
   // Mirror
   std::string makeMetaNamespaceName(const NamedDecl* ns_decl);
