@@ -464,6 +464,9 @@ struct get_pointer
 	static constexpr const value_type value = X::_ptr;
 };
 
+template <typename X>
+static const auto get_pointer_v = get_pointer<X>::value;
+
 } // namespace meta
 } // namespace std
 
