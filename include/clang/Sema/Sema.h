@@ -3960,6 +3960,10 @@ public:
 
 
   ExprResult
+  CreateUnaryVarMetaobjectOpExpr(UnaryMetaobjectOp Oper,
+                                 MetaobjectOpResult OpRes, ExprResult argExpr,
+                                 SourceLocation opLoc, SourceLocation endLoc);
+  ExprResult
   CreateUnaryStrMetaobjectOpExpr(UnaryMetaobjectOp Oper,
                                  MetaobjectOpResult OpRes, ExprResult argExpr,
                                  SourceLocation opLoc, SourceLocation endLoc);

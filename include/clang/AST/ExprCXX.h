@@ -4636,6 +4636,8 @@ class UnaryMetaobjectOpExpr : public Expr, public MetaobjectOpExprBase {
   static ReflexprExpr* opExposePrivate(ASTContext&, uintptr_t moid);
 
   static unsigned opGetSize(ASTContext&, uintptr_t moid);
+  
+  static DeclRefExpr* opUnreflectVariable(ASTContext&, uintptr_t moid);
 public:
   /// \brief Construct an empty metaobject operation expression.
   explicit UnaryMetaobjectOpExpr(EmptyShell Empty)
@@ -4689,7 +4691,9 @@ public:
   static void unpackSequence(ASTContext&, uintptr_t moid,
                              std::vector<llvm::APSInt>& dest);
 
-  bool hasIntResult(void) const { return getResultKind() != MOOR_String; }
+  bool hasIntResult(void) const {
+    return getResultKind() != MOOR_String && getResultKind() != MOOR_Variable;
+  }
 
   static
   llvm::APSInt getIntResult(ASTContext& Ctx, UnaryMetaobjectOp, uintptr_t moid);
@@ -4699,6 +4703,10 @@ public:
   std::string getStrResult(ASTContext&, UnaryMetaobjectOp,uintptr_t moid);
   static
   std::string getStrResult(ASTContext&, UnaryMetaobjectOp, Expr* argExpr);
+
+  static
+  DeclRefExpr* getVarResult(ASTContext&, UnaryMetaobjectOp, uintptr_t moid);
+  DeclRefExpr* getVarResult(ASTContext&) const;
 
   SourceLocation getOperatorLoc() const { return OpLoc; }
   void setOperatorLoc(SourceLocation L) { OpLoc = L; }

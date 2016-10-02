@@ -4755,6 +4755,10 @@ public:
   bool VisitUnaryDeref(const UnaryOperator *E);
   bool VisitUnaryReal(const UnaryOperator *E);
   bool VisitUnaryImag(const UnaryOperator *E);
+  bool VisitUnaryMetaobjectOpExpr(const UnaryMetaobjectOpExpr *E) {
+    assert(E->getKind() == MOOR_Variable);
+    return VisitDeclRefExpr(E->getVarResult(Info.Ctx));
+  }
   bool VisitUnaryPreInc(const UnaryOperator *UO) {
     return VisitUnaryPreIncDec(UO);
   }
@@ -4792,7 +4796,8 @@ public:
 ///  * @selector() expressions in Objective-C
 static bool EvaluateLValue(const Expr *E, LValue &Result, EvalInfo &Info) {
   assert(E->isGLValue() || E->getType()->isFunctionType() ||
-         E->getType()->isVoidType() || isa<ObjCSelectorExpr>(E));
+         E->getType()->isVoidType() || isa<ObjCSelectorExpr>(E)
+         || isa<UnaryMetaobjectOpExpr>(E));
   return LValueExprEvaluator(Info, Result).Visit(E);
 }
 
@@ -5417,6 +5422,10 @@ bool MemberPointerExprEvaluator::VisitCastExpr(const CastExpr *E) {
 bool MemberPointerExprEvaluator::VisitUnaryAddrOf(const UnaryOperator *E) {
   // C++11 [expr.unary.op]p3 has very strict rules on how the address of a
   // member can be formed.
+  if(const auto *meta = dyn_cast<UnaryMetaobjectOpExpr>(E->getSubExpr())) {
+    assert(meta->getResultKind() == MOOR_Variable);
+    return Success(meta->getVarResult(Info.Ctx)->getDecl());
+  }
   return Success(cast<DeclRefExpr>(E->getSubExpr())->getDecl());
 }
 

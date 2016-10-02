@@ -1967,6 +1967,8 @@ MetaobjectOpExprBase::getResultKindType(ASTContext& Ctx,
     case MOOR_Const:   break;
     case MOOR_String:
      llvm_unreachable("String-returning operations are handled elsewhere");
+    case MOOR_Variable:
+     llvm_unreachable("Variable-returning operations are handled elsewhere");
   }
 
   assert(OpRes == MOOR_Const);
@@ -2154,6 +2156,8 @@ UnaryMetaobjectOpExpr::isOperationApplicable(MetaobjectKind MoK,
       return conceptIsA(MoC, MOC_ObjectSequence);
     case UMOO_GetConstant:
       return conceptIsA(MoC, MOC_Constant);
+    case UMOO_UnreflectVariable:
+      return conceptIsA(MoC, MOC_Variable);
   }
   return false;
 }
@@ -2604,6 +2608,19 @@ UnaryMetaobjectOpExpr::opGetSize(ASTContext& Ctx, uintptr_t moid) {
   return action.count;
 }
 
+DeclRefExpr*
+UnaryMetaobjectOpExpr::opUnreflectVariable(ASTContext& Ctx, uintptr_t moid) {
+  // TODO[reflexpr] check if operation is applicable
+  ReflexprExpr *argRE = asReflexpr(Ctx, moid);
+  if (auto* VD = dyn_cast<VarDecl>(argRE->getArgumentNamedDecl())) {
+    NestedNameSpecifierLocBuilder builder;
+    builder.MakeGlobal(Ctx, {});
+    return DeclRefExpr::Create(Ctx, builder.getWithLocInContext(Ctx), {}, const_cast<VarDecl*>(VD), false, argRE->getLocStart(),
+        VD->getType().getNonReferenceType(), VK_LValue);
+            }
+  llvm_unreachable("Unable to get unreflected variable!");
+}
+
 struct findMatchingMetaobjSeqElement : matchingMetaobjSeqElementUtils {
   unsigned index;
   union {
@@ -2744,7 +2761,8 @@ UnaryMetaobjectOpExpr::getIntResult(ASTContext& Ctx, UnaryMetaobjectOp MoOp,
     }
     case UMOO_GetBaseName:
     case UMOO_GetDisplayName:
-    case UMOO_GetSourceFile: {
+    case UMOO_GetSourceFile:
+    case UMOO_UnreflectVariable: {
       llvm_unreachable("This metaobject operation does not return int value!");
     }
   }
@@ -2782,6 +2800,29 @@ UnaryMetaobjectOpExpr::getStrResult(ASTContext& Ctx, UnaryMetaobjectOp MoOp,
     llvm_unreachable("Failed to query Metaobject information!");
   }
   return getStrResult(Ctx, MoOp, moid);
+}
+
+DeclRefExpr*
+UnaryMetaobjectOpExpr::getVarResult(ASTContext& Ctx, UnaryMetaobjectOp MoOp,
+                                    uintptr_t moid) {
+  switch(MoOp) {
+#define METAOBJECT_VAR_OP_1(S,OpRes,OpName,K) \
+    case UMOO_##OpName: \
+      return op##OpName(Ctx, moid);
+#include "clang/Basic/TokenKinds.def"
+    default: {
+      llvm_unreachable("This metaobject operation does not return a variable!");
+    }
+  }
+}
+
+DeclRefExpr*
+UnaryMetaobjectOpExpr::getVarResult(ASTContext& Ctx) const {
+  uintptr_t moid;
+  if(!queryArgMetaobjectId(Ctx, moid)) {
+    llvm_unreachable("Failed to query Metaobject information!");
+  }
+  return getVarResult(Ctx, getKind(), moid);
 }
 
 Stmt::child_range UnaryMetaobjectOpExpr::children() {

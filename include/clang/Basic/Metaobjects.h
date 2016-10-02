@@ -140,7 +140,8 @@ namespace clang {
     UMOO_ExposeProtected,
     UMOO_ExposePrivate,
     UMOO_GetSize,
-    UMOO_GetConstant
+    UMOO_GetConstant,
+    UMOO_UnreflectVariable
   };
 
   // When updating this also update NaryMetaobjectOpExprBitfields
@@ -158,7 +159,8 @@ namespace clang {
     MOOR_Bool,
     MOOR_Const,
     MOOR_String,
-    MOOR_Metaobj
+    MOOR_Metaobj,
+    MOOR_Variable
   };
 }
 

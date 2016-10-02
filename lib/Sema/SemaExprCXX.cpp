@@ -5099,6 +5099,35 @@ Sema::CreateNaryStrMetaobjectOpExpr(NaryMetaobjectOp,
 }
 
 ExprResult
+Sema::CreateUnaryVarMetaobjectOpExpr(UnaryMetaobjectOp Oper,
+                                     MetaobjectOpResult OpRes,
+                                     ExprResult argExpr,
+                                     SourceLocation opLoc,
+                                     SourceLocation endLoc) {
+  assert((OpRes == MOOR_Variable) &&
+         "Cannot handle a non-variable-returning operation here");
+  assert(argExpr.isUsable());
+
+  // TODO[reflexpr] check if the arg exprs are valid and yield metaobject ids
+
+  bool isDep = false;
+  isDep |= argExpr.get()->isTypeDependent();
+  isDep |= argExpr.get()->isValueDependent();
+  isDep |= argExpr.get()->isInstantiationDependent();
+
+  if(isDep) {
+    return new (Context) UnaryMetaobjectOpExpr(Context, Oper,
+                                               OpRes, Context.VoidTy,
+                                               argExpr.get(), opLoc, endLoc);
+  } else {
+    uintptr_t moid;
+    if(!UnaryMetaobjectOpExpr::queryExprMetaobjectId(Context, moid, argExpr.get()))
+      llvm_unreachable("Failed to query Metaobject information!");
+    return UnaryMetaobjectOpExpr::getVarResult(Context, Oper, moid);
+  }
+}
+
+ExprResult
 Sema::CreateUnaryMetaobjectOpExpr(UnaryMetaobjectOp Oper,
                                   MetaobjectOpResult OpRes,
                                   ExprResult argExpr,
@@ -5124,10 +5153,13 @@ Sema::CreateUnaryMetaobjectOpExpr(UnaryMetaobjectOp Oper,
     }
   }
 
-  if (OpRes == MOOR_String) {
-    return CreateUnaryStrMetaobjectOpExpr(Oper, OpRes, argExpr, opLoc, endLoc);
-  } else {
-    return CreateUnaryIntMetaobjectOpExpr(Oper, OpRes, argExpr, opLoc, endLoc);
+  switch (OpRes) {
+    case MOOR_Variable:
+      return CreateUnaryVarMetaobjectOpExpr(Oper, OpRes, argExpr, opLoc, endLoc);
+    case MOOR_String:
+      return CreateUnaryStrMetaobjectOpExpr(Oper, OpRes, argExpr, opLoc, endLoc);
+    default:
+      return CreateUnaryIntMetaobjectOpExpr(Oper, OpRes, argExpr, opLoc, endLoc);
   }
 }
 

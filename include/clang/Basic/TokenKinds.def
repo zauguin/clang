@@ -60,6 +60,9 @@
 #ifndef METAOBJECT_STR_OP_1
 #define METAOBJECT_STR_OP_1(S,R,N,K) METAOBJECT_OP_1(S,R,N,K)
 #endif
+#ifndef METAOBJECT_VAR_OP_1
+#define METAOBJECT_VAR_OP_1(S,R,N,K) METAOBJECT_OP_1(S,R,N,K)
+#endif
 #ifndef METAOBJECT_TRAIT
 #define METAOBJECT_TRAIT(S,C,K) METAOBJECT_OP_1(is_meta_##S,Bool,IsMeta##C,K)
 #endif
@@ -491,6 +494,8 @@ METAOBJECT_INT_OP_1(get_size             , UInt         ,
                     GetSize              , KEYREFLECTION)
 METAOBJECT_INT_OP_1(get_constant         , Const        ,
                     GetConstant          , KEYREFLECTION)
+METAOBJECT_VAR_OP_1(unreflect_variable   , Variable     ,
+                    UnreflectVariable    , KEYREFLECTION)
 
 METAOBJECT_OP_2(get_element          , Metaobj      ,
                 GetElement           , KEYREFLECTION)
@@ -923,6 +928,7 @@ ANNOTATION(module_end)
 #undef PPKEYWORD
 #undef ALIAS
 #undef METAOBJECT_TRAIT
+#undef METAOBJECT_VAR_OP_1
 #undef METAOBJECT_STR_OP_1
 #undef METAOBJECT_INT_OP_1
 #undef METAOBJECT_OP_1
